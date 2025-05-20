@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use ServerApplicationBundle\Entity\Application;
-use ServerNodeBundle\SSH\SSHConnection;
+use ServerApplicationBundle\SSH\SSHConnection;
 use ServerStatsBundle\Entity\MinuteStat;
 use ServerStatsBundle\Repository\DailyTrafficRepository;
 use ServerStatsBundle\Repository\MonthlyTrafficRepository;

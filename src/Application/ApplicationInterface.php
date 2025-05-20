@@ -4,7 +4,7 @@ namespace ServerApplicationBundle\Application;
 
 use Carbon\CarbonInterface;
 use ServerApplicationBundle\Entity\Application;
-use ServerNodeBundle\SSH\SSHConnection;
+use ServerApplicationBundle\SSH\SSHConnection;
 
 interface ApplicationInterface
 {
