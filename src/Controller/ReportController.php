@@ -36,20 +36,13 @@ class ReportController extends AbstractController
         }
         $key = explode('_', $key);
 
-        $node = $this->nodeRepository->findOneBy([
-            'apiKey' => $key[0],
-        ]);
-        if (empty($node)) {
-            throw new NotFoundHttpException('找不到节点');
-        }
-
         $application = $this->applicationRepository->findOneBy([
-            'node' => $node,
-            'id' => $key[1],
+            'apiKey' => $key[0],
         ]);
         if (!$application) {
             throw new NotFoundHttpException('找不到应用');
         }
+        $node = $application->getNode();
 
         $now = Carbon::now();
         try {

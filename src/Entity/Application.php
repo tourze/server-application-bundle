@@ -10,9 +10,11 @@ use ServerNodeBundle\Entity\Node;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\Ignore;
 use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
+use Tourze\DoctrineRandomBundle\Attribute\RandomStringColumn;
 use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
 use Tourze\DoctrineTimestampBundle\Attribute\CreateTimeColumn;
 use Tourze\DoctrineTimestampBundle\Attribute\UpdateTimeColumn;
+use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
 use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
 use Tourze\EasyAdmin\Attribute\Action\Creatable;
@@ -46,7 +48,7 @@ class Application implements \Stringable
     #[Ignore]
     #[ORM\ManyToOne(inversedBy: 'applications')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private ?Node $node = null;
+    private Node $node;
 
     #[SelectField(targetEntity: ApplicationTypeFetcher::class)]
     #[FormField(span: 7)]
@@ -63,6 +65,16 @@ class Application implements \Stringable
 
     #[ORM\Column(nullable: true, options: ['comment' => '服务是否在线'])]
     private ?bool $online = null;
+
+    #[TrackColumn]
+    #[RandomStringColumn(prefix: 'ak', length: 16)]
+    #[ORM\Column(length: 128, unique: true, nullable: true, options: ['comment' => 'API Key'])]
+    private ?string $apiKey = null;
+
+    #[TrackColumn]
+    #[RandomStringColumn(prefix: 'sk', length: 16)]
+    #[ORM\Column(length: 128, nullable: true, options: ['comment' => 'API Secret'])]
+    private ?string $apiSecret = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true, options: ['comment' => '上次活跃时间'])]
     private ?\DateTimeInterface $activeTime = null;
@@ -95,7 +107,7 @@ class Application implements \Stringable
         return $this->id;
     }
 
-    public function getNode(): ?Node
+    public function getNode(): Node
     {
         return $this->node;
     }
@@ -151,6 +163,30 @@ class Application implements \Stringable
     public function setOnline(?bool $online): static
     {
         $this->online = $online;
+
+        return $this;
+    }
+
+    public function getApiKey(): ?string
+    {
+        return $this->apiKey;
+    }
+
+    public function setApiKey(?string $apiKey): static
+    {
+        $this->apiKey = $apiKey;
+
+        return $this;
+    }
+
+    public function getApiSecret(): ?string
+    {
+        return $this->apiSecret;
+    }
+
+    public function setApiSecret(?string $apiSecret): static
+    {
+        $this->apiSecret = $apiSecret;
 
         return $this;
     }

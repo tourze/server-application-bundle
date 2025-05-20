@@ -67,8 +67,8 @@ class StatsCollector implements ApplicationInterface, SelectDataFetcher
 
         $code = file_get_contents(__DIR__ . '/../../shell/collect.sh');
         // 修改一下，再重新写进入
-        $code = str_replace('{{ apiKey }}', "{$node->getApiKey()}_{$application->getId()}", $code);
-        $code = str_replace('{{ apiSecret }}', $node->getApiSecret(), $code);
+        $code = str_replace('{{ apiKey }}', "{$application->getApiKey()}_{$application->getId()}", $code);
+        $code = str_replace('{{ apiSecret }}', $application->getApiSecret(), $code);
         $code = str_replace('{{ mainInterface }}', $node->getMainInterface(), $code);
 
         $url = $_ENV['NODE_SERVER_MANAGE_API_DOMAIN'] . $this->urlGenerator->generate('server-node-report', ['id' => $node->getId()], UrlGeneratorInterface::ABSOLUTE_PATH);
