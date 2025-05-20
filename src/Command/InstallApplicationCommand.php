@@ -4,6 +4,7 @@ namespace ServerApplicationBundle\Command;
 
 use Carbon\Carbon;
 use Psr\Log\LoggerInterface;
+use ServerApplicationBundle\Repository\ApplicationRepository;
 use ServerApplicationBundle\Service\ApplicationTypeFetcher;
 use ServerNodeBundle\Repository\NodeRepository;
 use ServerNodeBundle\Service\ShellOperator;
@@ -24,6 +25,7 @@ class InstallApplicationCommand extends Command
         private readonly ApplicationTypeFetcher $typeFetcher,
         private readonly LoggerInterface $logger,
         private readonly ShellOperator $sshOperator,
+        private readonly ApplicationRepository $applicationRepository,
     ) {
         parent::__construct();
     }
@@ -49,7 +51,7 @@ class InstallApplicationCommand extends Command
         $type = $input->getArgument('type');
 
         foreach ($nodes as $node) {
-            foreach ($node->getApplications() as $application) {
+            foreach ($this->applicationRepository->findByNode($node) as $application) {
                 if ($type && $application->getType() !== $type) {
                     continue;
                 }

@@ -33,4 +33,18 @@ class ApplicationRepository extends ServiceEntityRepository
         }
         $this->getEntityManager()->flush();
     }
+
+    /**
+     * @param Node $node
+     * @return iterable<Application>
+     */
+    public function findByNode(Node $node): iterable
+    {
+        return $this->findBy(['node' => $node]);
+    }
+
+    public function countByNode(Node $node): int
+    {
+        return $this->count(['node' => $node]);
+    }
 }

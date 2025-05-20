@@ -92,7 +92,7 @@ class ApplicationDeployService
                 'node' => $node->getId(),
             ]);
 
-            foreach ($node->getApplications() as $application) {
+            foreach ($this->applicationRepository->findByNode($node) as $application) {
                 $this->deployApplication($node, $application);
             }
 

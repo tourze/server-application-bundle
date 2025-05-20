@@ -5,6 +5,7 @@ namespace ServerApplicationBundle\MessageHandler;
 use Carbon\Carbon;
 use Doctrine\ORM\EntityManagerInterface;
 use ServerApplicationBundle\Message\NodeHealthCheckMessage;
+use ServerApplicationBundle\Repository\ApplicationRepository;
 use ServerApplicationBundle\Service\ApplicationTypeFetcher;
 use ServerNodeBundle\Enum\NodeStatus;
 use ServerNodeBundle\Repository\NodeRepository;
@@ -18,6 +19,7 @@ class NodeHealthCheckHandler
         private readonly NodeRepository $nodeRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly ApplicationTypeFetcher $typeFetcher,
+        private readonly ApplicationRepository $applicationRepository,
     ) {
     }
 
@@ -29,7 +31,7 @@ class NodeHealthCheckHandler
         }
 
         $now = Carbon::now();
-        foreach ($node->getApplications() as $application) {
+        foreach ($this->applicationRepository->findByNode($node) as $application) {
             $component = $this->typeFetcher->getApplicationByCode($application->getType());
             $res = $component->healthCheck($application, $now);
             if (null === $res) {
@@ -45,7 +47,7 @@ class NodeHealthCheckHandler
         // 如果一个节点，所有有状态的服务都是正常的，那么他就是正常的
         $serviceCount = 0;
         $onlineCount = 0;
-        foreach ($node->getApplications() as $application) {
+        foreach ($this->applicationRepository->findByNode($node) as $application) {
             if (null !== $application->isOnline()) {
                 ++$serviceCount;
                 if ($application->isOnline()) {
