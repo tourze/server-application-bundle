@@ -1,0 +1,12 @@
+{# 此模板用于显示实例的链接 #}
+{% if field.value is not null %}
+    <a href="{{ ea_url()
+        .setController('ServerApplicationBundle\\Controller\\Admin\\AppInstanceCrudController')
+        .setAction('detail')
+        .setEntityId(field.value.id)
+        .generateUrl() }}">
+        {{ field.value.name }}
+    </a>
+{% else %}
+    <span class="text-muted">无实例</span>
+{% endif %} 

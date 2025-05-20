@@ -1,0 +1,6 @@
+{# 此模板用于格式化显示状态字段 #}
+{% if field.value is not null %}
+    {{ field.formattedValue|raw }}
+{% else %}
+    <span class="badge bg-secondary">未知</span>
+{% endif %}

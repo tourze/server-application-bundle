@@ -11,6 +11,10 @@ class ServerApplicationBundle extends Bundle implements BundleDependencyInterfac
     {
         return [
             \ServerNodeBundle\ServerNodeBundle::class => ['all' => true],
+            \Tourze\DoctrineTimestampBundle\DoctrineTimestampBundle::class => ['all' => true],
+            \Tourze\DoctrineIpBundle\DoctrineIpBundle::class => ['all' => true],
+            \Tourze\DoctrineTrackBundle\DoctrineTrackBundle::class => ['all' => true],
+            \Tourze\DoctrineUserBundle\DoctrineUserBundle::class => ['all' => true],
         ];
     }
 }
