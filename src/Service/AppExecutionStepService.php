@@ -94,7 +94,6 @@ class AppExecutionStepService
     {
         // 创建执行日志
         $log = new AppLifecycleLog();
-        $log->setId(bin2hex(random_bytes(10))); // 生成随机ID
         $log->setInstance($instance);
         $log->setExecutionStep($step);
         $log->setAction(LifecycleActionType::INSTALL); // 默认为安装操作，实际应根据上下文设置
