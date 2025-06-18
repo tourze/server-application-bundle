@@ -181,14 +181,11 @@ class AppExecutionStepCrudController extends AbstractCrudController
         if ($entityInstance instanceof AppExecutionStep) {
             // 处理参数JSON
             $parameters = $entityInstance->getParameters();
-            if (is_string($parameters)) {
-                $entityInstance->setParameters(json_decode($parameters, true) ?: []);
+            if ($parameters === null) {
+                $entityInstance->setParameters([]);
             }
             
-            // 生成ID（如果是新实体）
-            if (!$entityInstance->getId()) {
-                $entityInstance->setId(bin2hex(random_bytes(10)));
-            }
+            // ID是自动生成的，无需手动设置
         }
         
         parent::persistEntity($entityManager, $entityInstance);
@@ -214,7 +211,7 @@ class AppExecutionStepCrudController extends AbstractCrudController
                 $parentId = $context->getRequest()->query->get('parentEntityId');
                 $template = $this->entityManager->getRepository(AppTemplate::class)->find($parentId);
                 
-                if ($template) {
+                if ($template !== null) {
                     // 这个方法确实存在于 AppExecutionStep 中
                     $entity->setTemplate($template);
                 }

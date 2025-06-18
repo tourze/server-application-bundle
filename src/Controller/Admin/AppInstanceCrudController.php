@@ -334,13 +334,11 @@ class AppInstanceCrudController extends AbstractCrudController
         if ($entityInstance instanceof AppInstance) {
             // 处理环境变量JSON
             $envVars = $entityInstance->getEnvironmentVariables();
-            if (is_string($envVars)) {
-                $entityInstance->setEnvironmentVariables(json_decode($envVars, true) ?: []);
+            if ($envVars === null) {
+                $entityInstance->setEnvironmentVariables([]);
             }
             
-            // 生成ID（如果是新实体）
-            if (!$entityInstance->getId()) {
-                $entityInstance->setId(bin2hex(random_bytes(10)));
+            // ID是自动生成的，无需手动设置
                 
                 // 设置模板版本
                 $entityInstance->setTemplateVersion($entityInstance->getTemplate()->getVersion());
