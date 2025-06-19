@@ -97,7 +97,6 @@ class AppLifecycleLogService
         ?float $executionTime = null
     ): AppLifecycleLog {
         $log = new AppLifecycleLog();
-        $log->setId(bin2hex(random_bytes(10))); // 生成随机ID
         $log->setInstance($instance);
         $log->setAction($action);
         $log->setStatus($status);

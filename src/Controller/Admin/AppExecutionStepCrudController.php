@@ -32,7 +32,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use ServerApplicationBundle\Entity\AppExecutionStep;
 use ServerApplicationBundle\Entity\AppTemplate;
 use ServerApplicationBundle\Enum\ExecutionStepType;
-use ServerApplicationBundle\Service\AppExecutionStepService;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
@@ -44,7 +43,6 @@ use Symfony\Component\Form\FormEvents;
 class AppExecutionStepCrudController extends AbstractCrudController
 {
     public function __construct(
-        private readonly AppExecutionStepService $appExecutionStepService,
         private readonly EntityManagerInterface $entityManager,
     ) {
     }

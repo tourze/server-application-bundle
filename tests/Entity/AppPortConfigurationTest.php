@@ -165,8 +165,8 @@ class AppPortConfigurationTest extends TestCase
         $this->appPortConfiguration->setHealthCheckTimeout(10);
         $this->appPortConfiguration->setHealthCheckRetries(3);
         
-        $createTime = new \DateTime('2023-01-01 12:00:00');
-        $updateTime = new \DateTime('2023-01-02 12:00:00');
+        $createTime = new \DateTimeImmutable('2023-01-01 12:00:00');
+        $updateTime = new \DateTimeImmutable('2023-01-02 12:00:00');
         $this->appPortConfiguration->setCreateTime($createTime);
         $this->appPortConfiguration->setUpdateTime($updateTime);
         $this->appPortConfiguration->setCreatedBy('test_user');
@@ -253,8 +253,8 @@ class AppPortConfigurationTest extends TestCase
 
     public function test_timeFields_withDateTime_setsCorrectly(): void
     {
-        $createTime = new \DateTime('2023-01-01 12:00:00');
-        $updateTime = new \DateTime('2023-01-02 12:00:00');
+        $createTime = new \DateTimeImmutable('2023-01-01 12:00:00');
+        $updateTime = new \DateTimeImmutable('2023-01-02 12:00:00');
         
         $this->appPortConfiguration->setCreateTime($createTime);
         $this->appPortConfiguration->setUpdateTime($updateTime);

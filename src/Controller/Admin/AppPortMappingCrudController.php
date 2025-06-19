@@ -37,7 +37,6 @@ class AppPortMappingCrudController extends AbstractCrudController
 {
     public function __construct(
         private readonly AppPortMappingService $appPortMappingService,
-        private readonly EntityManagerInterface $entityManager,
         private readonly AdminUrlGenerator $adminUrlGenerator,
     ) {
     }
@@ -163,7 +162,7 @@ class AppPortMappingCrudController extends AbstractCrudController
     {
         if ($entityInstance instanceof AppPortMapping) {
             // 生成ID（如果是新实体）
-            if (!$entityInstance->getId()) {
+            if (null === $entityInstance->getId()) {
                 $entityInstance->setId(bin2hex(random_bytes(10)));
             }
         }

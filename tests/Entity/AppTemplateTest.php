@@ -282,8 +282,8 @@ class AppTemplateTest extends TestCase
         $this->appTemplate->setIsLatest(true);
         $this->appTemplate->setEnvironmentVariables(['NODE_ENV' => 'production']);
         
-        $createTime = new \DateTime('2023-01-01 12:00:00');
-        $updateTime = new \DateTime('2023-01-02 12:00:00');
+        $createTime = new \DateTimeImmutable('2023-01-01 12:00:00');
+        $updateTime = new \DateTimeImmutable('2023-01-02 12:00:00');
         $this->appTemplate->setCreateTime($createTime);
         $this->appTemplate->setUpdateTime($updateTime);
         $this->appTemplate->setCreatedBy('test_user');
@@ -351,8 +351,8 @@ class AppTemplateTest extends TestCase
 
     public function test_timeFields_withDateTime_setsCorrectly(): void
     {
-        $createTime = new \DateTime('2023-01-01 12:00:00');
-        $updateTime = new \DateTime('2023-01-02 12:00:00');
+        $createTime = new \DateTimeImmutable('2023-01-01 12:00:00');
+        $updateTime = new \DateTimeImmutable('2023-01-02 12:00:00');
         
         $this->appTemplate->setCreateTime($createTime);
         $this->appTemplate->setUpdateTime($updateTime);

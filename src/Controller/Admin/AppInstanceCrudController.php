@@ -32,7 +32,6 @@ use ServerApplicationBundle\Entity\AppInstance;
 use ServerApplicationBundle\Entity\AppTemplate;
 use ServerApplicationBundle\Enum\AppStatus;
 use ServerApplicationBundle\Service\AppInstanceService;
-use ServerApplicationBundle\Service\AppTemplateService;
 use Symfony\Component\Form\Extension\Core\Type\EnumType as SymfonyEnumType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -43,7 +42,6 @@ class AppInstanceCrudController extends AbstractCrudController
 {
     public function __construct(
         private readonly AppInstanceService $appInstanceService,
-        private readonly AppTemplateService $appTemplateService,
         private readonly EntityManagerInterface $entityManager,
         private readonly AdminUrlGenerator $adminUrlGenerator,
     ) {

@@ -18,7 +18,7 @@ class AdminMenu implements MenuProviderInterface
 
     public function __invoke(ItemInterface $item): void
     {
-        if (!$item->getChild('应用管理')) {
+        if (null === $item->getChild('应用管理')) {
             $item->addChild('应用管理');
         }
 

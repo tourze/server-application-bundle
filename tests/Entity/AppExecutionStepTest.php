@@ -254,8 +254,8 @@ class AppExecutionStepTest extends TestCase
         $this->appExecutionStep->setRetryCount(3);
         $this->appExecutionStep->setRetryInterval(10);
         
-        $createTime = new \DateTime('2023-01-01 12:00:00');
-        $updateTime = new \DateTime('2023-01-02 12:00:00');
+        $createTime = new \DateTimeImmutable('2023-01-01 12:00:00');
+        $updateTime = new \DateTimeImmutable('2023-01-02 12:00:00');
         $this->appExecutionStep->setCreateTime($createTime);
         $this->appExecutionStep->setUpdateTime($updateTime);
         $this->appExecutionStep->setCreatedBy('test_user');
@@ -320,8 +320,8 @@ class AppExecutionStepTest extends TestCase
 
     public function test_timeFields_withDateTime_setsCorrectly(): void
     {
-        $createTime = new \DateTime('2023-01-01 12:00:00');
-        $updateTime = new \DateTime('2023-01-02 12:00:00');
+        $createTime = new \DateTimeImmutable('2023-01-01 12:00:00');
+        $updateTime = new \DateTimeImmutable('2023-01-02 12:00:00');
         
         $this->appExecutionStep->setCreateTime($createTime);
         $this->appExecutionStep->setUpdateTime($updateTime);

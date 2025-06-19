@@ -240,9 +240,9 @@ class AppInstanceTest extends TestCase
         $this->appInstance->setEnvironmentVariables(['NODE_ENV' => 'production']);
         $this->appInstance->setHealthy(true);
         
-        $lastHealthCheck = new \DateTime('2023-01-01 10:00:00');
-        $createTime = new \DateTime('2023-01-01 12:00:00');
-        $updateTime = new \DateTime('2023-01-02 12:00:00');
+        $lastHealthCheck = new \DateTimeImmutable('2023-01-01 10:00:00');
+        $createTime = new \DateTimeImmutable('2023-01-01 12:00:00');
+        $updateTime = new \DateTimeImmutable('2023-01-02 12:00:00');
         $this->appInstance->setLastHealthCheck($lastHealthCheck);
         $this->appInstance->setCreateTime($createTime);
         $this->appInstance->setUpdateTime($updateTime);
@@ -344,8 +344,8 @@ class AppInstanceTest extends TestCase
 
     public function test_timeFields_withDateTime_setsCorrectly(): void
     {
-        $createTime = new \DateTime('2023-01-01 12:00:00');
-        $updateTime = new \DateTime('2023-01-02 12:00:00');
+        $createTime = new \DateTimeImmutable('2023-01-01 12:00:00');
+        $updateTime = new \DateTimeImmutable('2023-01-02 12:00:00');
         
         $this->appInstance->setCreateTime($createTime);
         $this->appInstance->setUpdateTime($updateTime);

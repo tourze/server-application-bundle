@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ServerApplicationBundle\Controller\Admin;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FilterCollection;
@@ -28,7 +27,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use ServerApplicationBundle\Entity\AppLifecycleLog;
 use ServerApplicationBundle\Enum\LifecycleActionType;
 use ServerApplicationBundle\Enum\LogStatus;
-use ServerApplicationBundle\Service\AppLifecycleLogService;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 
 /**
@@ -37,8 +35,6 @@ use Symfony\Component\Form\Extension\Core\Type\EnumType;
 class AppLifecycleLogCrudController extends AbstractCrudController
 {
     public function __construct(
-        private readonly AppLifecycleLogService $appLifecycleLogService,
-        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -87,7 +83,6 @@ class AppLifecycleLogCrudController extends AbstractCrudController
                     LifecycleActionType::INSTALL => '安装',
                     LifecycleActionType::UNINSTALL => '卸载',
                     LifecycleActionType::HEALTH_CHECK => '健康检查',
-                    default => $value->value,
                 };
             });
         
@@ -105,7 +100,6 @@ class AppLifecycleLogCrudController extends AbstractCrudController
                 return match($value) {
                     LogStatus::SUCCESS => '<span class="badge bg-success">成功</span>',
                     LogStatus::FAILED => '<span class="badge bg-danger">失败</span>',
-                    default => $value->value,
                 };
             })
             ->setTemplatePath('@ServerApplication/admin/field/status_badge.html.twig');

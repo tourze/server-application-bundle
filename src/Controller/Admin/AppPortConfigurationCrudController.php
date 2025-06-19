@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ServerApplicationBundle\Controller\Admin;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FilterCollection;
@@ -29,7 +28,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use ServerApplicationBundle\Entity\AppPortConfiguration;
 use ServerApplicationBundle\Enum\HealthCheckType;
 use ServerApplicationBundle\Enum\ProtocolType;
-use ServerApplicationBundle\Service\AppPortConfigurationService;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 
 /**
@@ -38,8 +36,6 @@ use Symfony\Component\Form\Extension\Core\Type\EnumType;
 class AppPortConfigurationCrudController extends AbstractCrudController
 {
     public function __construct(
-        private readonly AppPortConfigurationService $appPortConfigurationService,
-        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -91,7 +87,6 @@ class AppPortConfigurationCrudController extends AbstractCrudController
                 return match($value) {
                     ProtocolType::TCP => 'TCP',
                     ProtocolType::UDP => 'UDP',
-                    default => $value->value,
                 };
             });
         
@@ -114,7 +109,6 @@ class AppPortConfigurationCrudController extends AbstractCrudController
                     HealthCheckType::TCP_CONNECT => 'TCP连接检查',
                     HealthCheckType::UDP_PORT_CHECK => 'UDP端口检查',
                     HealthCheckType::COMMAND => '命令执行检查',
-                    default => $value->value,
                 };
             });
         
@@ -193,11 +187,9 @@ class AppPortConfigurationCrudController extends AbstractCrudController
         if ($entityInstance instanceof AppPortConfiguration) {
             // 处理健康检查配置JSON
             $healthCheckConfig = $entityInstance->getHealthCheckConfig();
-            if (is_string($healthCheckConfig)) {
-                $entityInstance->setHealthCheckConfig(json_decode($healthCheckConfig, true) ?: []);
+            if (null === $healthCheckConfig) {
+                $entityInstance->setHealthCheckConfig([]);
             }
-            
-            // 不要尝试设置ID，让Doctrine自动生成
         }
         
         parent::persistEntity($entityManager, $entityInstance);

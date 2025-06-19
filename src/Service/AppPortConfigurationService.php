@@ -136,7 +136,7 @@ class AppPortConfigurationService
         }
         
         // 检查输出内容
-        if (isset($config['successOutput']) && is_array($output) && count($output) > 0) {
+        if (isset($config['successOutput']) && count($output) > 0) {
             return preg_match('/' . $config['successOutput'] . '/', implode("\n", $output)) === 1;
         }
         

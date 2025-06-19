@@ -76,7 +76,6 @@ class AppPortMappingService
     public function createPortMapping(AppInstance $instance, AppPortConfiguration $configuration, int $actualPort): AppPortMapping
     {
         $portMapping = new AppPortMapping();
-        $portMapping->setId(bin2hex(random_bytes(10))); // 生成随机ID
         $portMapping->setInstance($instance);
         $portMapping->setConfiguration($configuration);
         $portMapping->setActualPort($actualPort);
