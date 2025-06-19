@@ -51,7 +51,6 @@ class ExecutionStepTypeTest extends TestCase
         foreach (ExecutionStepType::cases() as $type) {
             $label = $type->getLabel();
             $this->assertNotEmpty($label);
-            $this->assertIsString($label);
         }
     }
 }

@@ -57,7 +57,6 @@ class LifecycleActionTypeTest extends TestCase
         foreach (LifecycleActionType::cases() as $type) {
             $label = $type->getLabel();
             $this->assertNotEmpty($label);
-            $this->assertIsString($label);
         }
     }
 } 

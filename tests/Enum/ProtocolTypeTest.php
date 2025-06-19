@@ -51,7 +51,6 @@ class ProtocolTypeTest extends TestCase
         foreach (ProtocolType::cases() as $protocol) {
             $label = $protocol->getLabel();
             $this->assertNotEmpty($label);
-            $this->assertIsString($label);
         }
     }
 } 

@@ -117,7 +117,6 @@ class AppInstanceCrudController extends AbstractCrudController
                     AppStatus::FAILED => '<span class="badge bg-danger">失败</span>',
                     AppStatus::UNINSTALLING => '<span class="badge bg-warning">卸载中</span>',
                     AppStatus::STOPPED => '<span class="badge bg-secondary">已停止</span>',
-                    default => $value->value,
                 };
             })
             ->setTemplatePath('@ServerApplication/admin/field/status_badge.html.twig');
@@ -340,12 +339,11 @@ class AppInstanceCrudController extends AbstractCrudController
             
             // ID是自动生成的，无需手动设置
                 
-                // 设置模板版本
-                $entityInstance->setTemplateVersion($entityInstance->getTemplate()->getVersion());
+            // 设置模板版本
+            $entityInstance->setTemplateVersion($entityInstance->getTemplate()->getVersion());
                 
-                // 设置初始状态
-                $entityInstance->setStatus(AppStatus::STOPPED);
-            }
+            // 设置初始状态
+            $entityInstance->setStatus(AppStatus::STOPPED);
         }
         
         parent::persistEntity($entityManager, $entityInstance);

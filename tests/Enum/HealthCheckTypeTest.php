@@ -57,7 +57,6 @@ class HealthCheckTypeTest extends TestCase
         foreach (HealthCheckType::cases() as $type) {
             $label = $type->getLabel();
             $this->assertNotEmpty($label);
-            $this->assertIsString($label);
         }
     }
 } 

@@ -107,7 +107,6 @@ class AppExecutionStepCrudController extends AbstractCrudController
                 return match($value) {
                     ExecutionStepType::COMMAND => '命令',
                     ExecutionStepType::SCRIPT => '脚本',
-                    default => $value->value,
                 };
             });
         

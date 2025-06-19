@@ -79,7 +79,6 @@ class AppStatusTest extends TestCase
         foreach (AppStatus::cases() as $status) {
             $label = $status->getLabel();
             $this->assertNotEmpty($label);
-            $this->assertIsString($label);
         }
     }
 } 

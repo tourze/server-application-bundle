@@ -51,7 +51,6 @@ class LogStatusTest extends TestCase
         foreach (LogStatus::cases() as $status) {
             $label = $status->getLabel();
             $this->assertNotEmpty($label);
-            $this->assertIsString($label);
         }
     }
 } 
