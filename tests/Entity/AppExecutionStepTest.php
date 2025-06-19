@@ -26,7 +26,6 @@ class AppExecutionStepTest extends TestCase
     {
         $template = $this->createMock(AppTemplate::class);
         
-        // @phpstan-ignore-next-line
         $result = $this->appExecutionStep->setTemplate($template);
         
         $this->assertSame($this->appExecutionStep, $result);
@@ -238,7 +237,6 @@ class AppExecutionStepTest extends TestCase
             ->method('getId')
             ->willReturn(1);
         
-        // @phpstan-ignore-next-line
         $this->appExecutionStep->setTemplate($template);
         $this->appExecutionStep->setSequence(1);
         $this->appExecutionStep->setName('Test Step');

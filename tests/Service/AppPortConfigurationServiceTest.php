@@ -174,6 +174,8 @@ class AppPortConfigurationServiceTest extends TestCase
         
         // 测试本地回环地址，应该能连接成功
         $result = $this->service->checkHealth($config, 22, '127.0.0.1'); // SSH端口通常是开放的
+        
+        $this->assertIsBool($result);
     }
 
     public function test_checkHealth_withUdpPortCheckType_returnsBool(): void
@@ -182,14 +184,18 @@ class AppPortConfigurationServiceTest extends TestCase
         $config->setHealthCheckType(HealthCheckType::UDP_PORT_CHECK);
         
         $result = $this->service->checkHealth($config, 53, '8.8.8.8'); // DNS端口
+        
+        $this->assertIsBool($result);
     }
 
     public function test_checkHealth_withCommandType_returnsBasedOnExitCode(): void
     {
         $config = new AppPortConfiguration();
         $config->setHealthCheckType(HealthCheckType::COMMAND);
-        $config->setHealthCheckConfig(['command' => 'echo "test"', 'successExitCode' => 0]);
+        $config->setHealthCheckConfig(['command' => 'true', 'successExitCode' => 0]);
         
         $result = $this->service->checkHealth($config, 80, 'localhost');
+        
+        $this->assertTrue($result); // true 命令总是返回退出码 0
     }
 } 

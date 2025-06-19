@@ -91,7 +91,7 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
 
     public function __toString(): string
     {
-        return $this->protocol->value . '/' . $this->port . ($this->description ? ' (' . $this->description . ')' : '');
+        return $this->protocol->value . '/' . $this->port . (null !== $this->description ? ' (' . $this->description . ')' : '');
     }
 
     /**

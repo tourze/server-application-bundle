@@ -78,7 +78,7 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
         return sprintf(
             '%s (%s) - %s',
             $this->action->value,
-            $this->executionStep ? $this->executionStep->getName() : '无执行步骤',
+            null !== $this->executionStep ? $this->executionStep->getName() : '无执行步骤',
             $this->status->value
         );
     }

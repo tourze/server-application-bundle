@@ -27,7 +27,6 @@ class AppPortConfigurationTest extends TestCase
     {
         $template = $this->createMock(AppTemplate::class);
         
-        // @phpstan-ignore-next-line
         $result = $this->appPortConfiguration->setTemplate($template);
         
         $this->assertSame($this->appPortConfiguration, $result);
@@ -154,7 +153,6 @@ class AppPortConfigurationTest extends TestCase
             ->method('getId')
             ->willReturn(1);
         
-        // @phpstan-ignore-next-line
         $this->appPortConfiguration->setTemplate($template);
         $this->appPortConfiguration->setPort(8080);
         $this->appPortConfiguration->setProtocol(ProtocolType::TCP);
@@ -196,7 +194,6 @@ class AppPortConfigurationTest extends TestCase
             ->method('getId')
             ->willReturn(1);
         
-        // @phpstan-ignore-next-line
         $this->appPortConfiguration->setTemplate($template);
         $this->appPortConfiguration->setPort(8080);
         $this->appPortConfiguration->setProtocol(ProtocolType::TCP);

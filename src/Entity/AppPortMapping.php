@@ -53,7 +53,7 @@ class AppPortMapping implements \Stringable, AdminArrayInterface, ApiArrayInterf
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否健康', 'default' => false])]
     private bool $healthy = false;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true, options: ['comment' => '上次健康检测时间'])]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['comment' => '上次健康检测时间'])]
     private ?\DateTimeInterface $lastHealthCheck = null;
 
     #[CreatedByColumn]

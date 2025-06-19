@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use ServerApplicationBundle\Entity\AppPortConfiguration;
 use ServerApplicationBundle\Entity\AppTemplate;
 use ServerApplicationBundle\Repository\AppPortConfigurationRepository;
+use ServerApplicationBundle\Enum\HealthCheckType;
 
 /**
  * 应用端口配置服务
@@ -75,13 +76,13 @@ class AppPortConfigurationService
     {
         // TODO: 根据不同的健康检测类型实现检测逻辑
         switch ($portConfiguration->getHealthCheckType()) {
-            case 'TCP_CONNECT':
+            case HealthCheckType::TCP_CONNECT:
                 // 尝试建立TCP连接
                 return $this->checkTcpConnection($host, $actualPort, $portConfiguration->getHealthCheckTimeout());
-            case 'UDP_PORT_CHECK':
+            case HealthCheckType::UDP_PORT_CHECK:
                 // 检查UDP端口
                 return $this->checkUdpPort($host, $actualPort);
-            case 'COMMAND':
+            case HealthCheckType::COMMAND:
                 // 执行命令检测
                 return $this->executeHealthCheckCommand($portConfiguration->getHealthCheckConfig(), $host, $actualPort);
             default:
