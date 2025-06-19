@@ -15,8 +15,7 @@ use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
 use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
-use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
-use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
+use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 
 /**
  * 应用端口配置
@@ -29,6 +28,7 @@ use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
 class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArrayInterface
 {
     use TimestampableAware;
+    use BlameableAware;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '唯一标识符'])]
@@ -72,14 +72,6 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '健康检测重试次数', 'default' => 3])]
     #[TrackColumn]
     private int $healthCheckRetries = 3;
-
-    #[CreatedByColumn]
-    #[ORM\Column(type: Types::STRING, length: 64, nullable: true, options: ['comment' => '创建人'])]
-    private ?string $createdBy = null;
-
-    #[UpdatedByColumn]
-    #[ORM\Column(type: Types::STRING, length: 64, nullable: true, options: ['comment' => '更新人'])]
-    private ?string $updatedBy = null;
 
     #[CreateIpColumn]
     #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
@@ -252,28 +244,6 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
     public function setHealthCheckRetries(int $healthCheckRetries): self
     {
         $this->healthCheckRetries = $healthCheckRetries;
-        return $this;
-    }
-
-    public function getCreatedBy(): ?string
-    {
-        return $this->createdBy;
-    }
-
-    public function setCreatedBy(?string $createdBy): self
-    {
-        $this->createdBy = $createdBy;
-        return $this;
-    }
-
-    public function getUpdatedBy(): ?string
-    {
-        return $this->updatedBy;
-    }
-
-    public function setUpdatedBy(?string $updatedBy): self
-    {
-        $this->updatedBy = $updatedBy;
         return $this;
     }
 

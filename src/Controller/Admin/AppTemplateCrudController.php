@@ -207,16 +207,6 @@ class AppTemplateCrudController extends AbstractCrudController
      */
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
-        if ($entityInstance instanceof AppTemplate) {
-            // 处理环境变量JSON
-            $envVars = $entityInstance->getEnvironmentVariables();
-            if (is_string($envVars)) {
-                $entityInstance->setEnvironmentVariables(json_decode($envVars, true) ?: []);
-            }
-
-            // 不要尝试设置ID，让Doctrine自动生成
-        }
-
         parent::persistEntity($entityManager, $entityInstance);
     }
 }

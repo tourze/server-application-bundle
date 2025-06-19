@@ -166,25 +166,28 @@ class AppPortConfigurationServiceTest extends TestCase
         $this->assertSame($expectedConfigs, $result);
     }
 
-    public function test_checkHealth_withTcpConnectType_returnsTrueForValidConnection(): void
+    public function test_checkHealth_withTcpConnectType_returnsBooleanValue(): void
     {
         $config = new AppPortConfiguration();
         $config->setHealthCheckType(HealthCheckType::TCP_CONNECT);
-        $config->setHealthCheckTimeout(5);
+        $config->setHealthCheckTimeout(1);
         
-        // 测试本地回环地址，应该能连接成功
-        $result = $this->service->checkHealth($config, 22, '127.0.0.1'); // SSH端口通常是开放的
+        // 测试一个通常不存在的端口
+        $result = $this->service->checkHealth($config, 9999, '127.0.0.1');
         
-        $this->assertIsBool($result);
+        // 只验证返回值是布尔类型，不验证具体结果（因为端口可能存在或不存在）
+        $this->assertFalse($result); // 端口 9999 通常是关闭的
     }
 
-    public function test_checkHealth_withUdpPortCheckType_returnsBool(): void
+    public function test_checkHealth_withUdpPortCheckType_returnsBoolean(): void
     {
         $config = new AppPortConfiguration();
         $config->setHealthCheckType(HealthCheckType::UDP_PORT_CHECK);
         
-        $result = $this->service->checkHealth($config, 53, '8.8.8.8'); // DNS端口
+        // 测试 UDP 端口检测
+        $result = $this->service->checkHealth($config, 9999, '127.0.0.1');
         
+        // UDP 由于其无连接特性，fsockopen 通常会成功，所以我们只验证返回布尔值
         $this->assertIsBool($result);
     }
 

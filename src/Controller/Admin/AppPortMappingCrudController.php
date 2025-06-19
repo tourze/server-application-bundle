@@ -160,13 +160,6 @@ class AppPortMappingCrudController extends AbstractCrudController
      */
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
-        if ($entityInstance instanceof AppPortMapping) {
-            // 生成ID（如果是新实体）
-            if (null === $entityInstance->getId()) {
-                $entityInstance->setId(bin2hex(random_bytes(10)));
-            }
-        }
-        
         parent::persistEntity($entityManager, $entityInstance);
     }
 } 

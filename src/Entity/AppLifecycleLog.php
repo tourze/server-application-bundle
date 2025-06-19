@@ -13,7 +13,7 @@ use Tourze\Arrayable\AdminArrayInterface;
 use Tourze\Arrayable\ApiArrayInterface;
 use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\CreateTimeAware;
-use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
+use Tourze\DoctrineUserBundle\Traits\CreatedByAware;
 
 /**
  * 应用生命周期日志
@@ -27,6 +27,7 @@ use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
 class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInterface
 {
     use CreateTimeAware;
+    use CreatedByAware;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -64,10 +65,6 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
 
     #[ORM\Column(type: Types::FLOAT, nullable: true, options: ['comment' => '执行时间(秒)'])]
     private ?float $executionTime = null;
-
-    #[CreatedByColumn]
-    #[ORM\Column(type: Types::STRING, length: 64, nullable: true, options: ['comment' => '创建人'])]
-    private ?string $createdBy = null;
 
     #[CreateIpColumn]
     #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
@@ -225,17 +222,6 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
     public function setExecutionTime(?float $executionTime): self
     {
         $this->executionTime = $executionTime;
-        return $this;
-    }
-
-    public function getCreatedBy(): ?string
-    {
-        return $this->createdBy;
-    }
-
-    public function setCreatedBy(?string $createdBy): self
-    {
-        $this->createdBy = $createdBy;
         return $this;
     }
 

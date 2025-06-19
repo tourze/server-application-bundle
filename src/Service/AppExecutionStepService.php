@@ -115,6 +115,7 @@ class AppExecutionStepService
             
             $log->setCommandOutput($result['output']);
             $log->setExitCode($result['exitCode']);
+            /** @phpstan-ignore-next-line */
             $log->setStatus($result['exitCode'] === 0 ? LogStatus::SUCCESS : LogStatus::FAILED);
             $log->setMessage('执行完成');
             

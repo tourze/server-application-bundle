@@ -16,8 +16,7 @@ use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
 use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
-use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
-use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
+use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 
 /**
  * 应用实例
@@ -30,6 +29,7 @@ use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
 class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
 {
     use TimestampableAware;
+    use BlameableAware;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '唯一标识符'])]
@@ -45,11 +45,6 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
     #[ORM\Column(type: Types::STRING, length: 20, options: ['comment' => '应用时的模板版本号'])]
     private string $templateVersion;
 
-    /**
-     * 部署的服务器节点
-     *
-     * 这里假设Node类是一个已存在的实体，实际实现时需要根据服务器节点管理系统的类设计进行调整
-     */
     #[ORM\Column(type: Types::STRING, length: 20, options: ['comment' => '部署的服务器节点ID'])]
     private string $nodeId;
 
@@ -81,16 +76,8 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否健康', 'default' => false])]
     private bool $healthy = false;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true, options: ['comment' => '上次健康检测时间'])]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['comment' => '上次健康检测时间'])]
     private ?\DateTimeInterface $lastHealthCheck = null;
-
-    #[CreatedByColumn]
-    #[ORM\Column(type: Types::STRING, length: 64, nullable: true, options: ['comment' => '创建人'])]
-    private ?string $createdBy = null;
-
-    #[UpdatedByColumn]
-    #[ORM\Column(type: Types::STRING, length: 64, nullable: true, options: ['comment' => '更新人'])]
-    private ?string $updatedBy = null;
 
     #[CreateIpColumn]
     #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
@@ -319,28 +306,6 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
     public function setLastHealthCheck(?\DateTimeInterface $lastHealthCheck): self
     {
         $this->lastHealthCheck = $lastHealthCheck;
-        return $this;
-    }
-
-    public function getCreatedBy(): ?string
-    {
-        return $this->createdBy;
-    }
-
-    public function setCreatedBy(?string $createdBy): self
-    {
-        $this->createdBy = $createdBy;
-        return $this;
-    }
-
-    public function getUpdatedBy(): ?string
-    {
-        return $this->updatedBy;
-    }
-
-    public function setUpdatedBy(?string $updatedBy): self
-    {
-        $this->updatedBy = $updatedBy;
         return $this;
     }
 
