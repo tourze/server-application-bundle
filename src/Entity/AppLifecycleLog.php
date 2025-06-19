@@ -12,7 +12,7 @@ use ServerApplicationBundle\Repository\AppLifecycleLogRepository;
 use Tourze\Arrayable\AdminArrayInterface;
 use Tourze\Arrayable\ApiArrayInterface;
 use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineTimestampBundle\Attribute\CreateTimeColumn;
+use Tourze\DoctrineTimestampBundle\Traits\CreateTimeAware;
 use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
 
 /**
@@ -26,6 +26,8 @@ use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
 #[ORM\Index(name: 'ims_server_app_lifecycle_log_idx_status', columns: ['status'])]
 class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInterface
 {
+    use CreateTimeAware;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '唯一标识符'])]
@@ -70,10 +72,6 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
     #[CreateIpColumn]
     #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
     private ?string $createdFromIp = null;
-
-    #[CreateTimeColumn]
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true, options: ['comment' => '创建时间'])]
-    private ?\DateTimeInterface $createTime = null;
 
     public function __toString(): string
     {
@@ -250,15 +248,5 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
     {
         $this->createdFromIp = $createdFromIp;
         return $this;
-    }
-
-    public function getCreateTime(): ?\DateTimeInterface
-    {
-        return $this->createTime;
-    }
-
-    public function setCreateTime(?\DateTimeInterface $createTime): void
-    {
-        $this->createTime = $createTime;
     }
 }
