@@ -187,8 +187,8 @@ class AppPortConfigurationServiceTest extends TestCase
         // 测试 UDP 端口检测
         $result = $this->service->checkHealth($config, 9999, '127.0.0.1');
         
-        // UDP 由于其无连接特性，fsockopen 通常会成功，所以我们只验证返回布尔值
-        $this->assertIsBool($result);
+        // UDP 由于其无连接特性，fsockopen 通常会成功
+        $this->assertTrue($result);
     }
 
     public function test_checkHealth_withCommandType_returnsBasedOnExitCode(): void

@@ -30,8 +30,8 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\NumericFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use ServerApplicationBundle\Entity\AppExecutionStep;
-use ServerApplicationBundle\Entity\AppTemplate;
 use ServerApplicationBundle\Enum\ExecutionStepType;
+use ServerApplicationBundle\Repository\AppTemplateRepository;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
@@ -43,7 +43,7 @@ use Symfony\Component\Form\FormEvents;
 class AppExecutionStepCrudController extends AbstractCrudController
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
+        private readonly AppTemplateRepository $appTemplateRepository,
     ) {
     }
 
@@ -206,7 +206,7 @@ class AppExecutionStepCrudController extends AbstractCrudController
                 && $context->getRequest()->query->has('parentEntityId')
             ) {
                 $parentId = $context->getRequest()->query->get('parentEntityId');
-                $template = $this->entityManager->getRepository(AppTemplate::class)->find($parentId);
+                $template = $this->appTemplateRepository->find($parentId);
                 
                 if ($template !== null) {
                     // 这个方法确实存在于 AppExecutionStep 中
