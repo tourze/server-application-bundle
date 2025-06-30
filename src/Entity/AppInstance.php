@@ -70,7 +70,7 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
      * 生命周期日志
      */
     #[ORM\OneToMany(targetEntity: AppLifecycleLog::class, mappedBy: 'instance', fetch: 'EXTRA_LAZY', orphanRemoval: true)]
-    #[ORM\OrderBy(['createTime' => 'DESC'])]
+    #[ORM\OrderBy(value: ['createTime' => 'DESC'])]
     private Collection $lifecycleLogs;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否健康', 'default' => false])]
@@ -329,4 +329,5 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
     {
         $this->updatedFromIp = $updatedFromIp;
         return $this;
-    }}
+    }
+}

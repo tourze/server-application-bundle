@@ -22,11 +22,12 @@ class AppExecutionStepService
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly AppExecutionStepRepository $appExecutionStepRepository,
-    ) {
-    }
+    ) {}
 
     /**
      * 获取执行步骤列表
+     *
+     * @return AppExecutionStep[]
      */
     public function findAll(): array
     {
@@ -47,7 +48,7 @@ class AppExecutionStepService
     public function save(AppExecutionStep $appExecutionStep, bool $flush = true): void
     {
         $this->entityManager->persist($appExecutionStep);
-        
+
         if ($flush) {
             $this->entityManager->flush();
         }
@@ -59,7 +60,7 @@ class AppExecutionStepService
     public function remove(AppExecutionStep $appExecutionStep, bool $flush = true): void
     {
         $this->entityManager->remove($appExecutionStep);
-        
+
         if ($flush) {
             $this->entityManager->flush();
         }
@@ -67,6 +68,7 @@ class AppExecutionStepService
 
     /**
      * 获取模板的安装步骤
+     * @return AppExecutionStep[]
      */
     public function findInstallSteps(AppTemplate $template): array
     {
@@ -78,6 +80,7 @@ class AppExecutionStepService
 
     /**
      * 获取模板的卸载步骤
+     * @return AppExecutionStep[]
      */
     public function findUninstallSteps(AppTemplate $template): array
     {
@@ -89,6 +92,7 @@ class AppExecutionStepService
 
     /**
      * 执行步骤
+     * @param array<string, mixed> $parameters
      */
     public function executeStep(AppExecutionStep $step, AppInstance $instance, array $parameters = []): AppLifecycleLog
     {
@@ -97,13 +101,13 @@ class AppExecutionStepService
         $log->setInstance($instance);
         $log->setExecutionStep($step);
         $log->setAction(LifecycleActionType::INSTALL); // 默认为安装操作，实际应根据上下文设置
-        
+
         $startTime = microtime(true);
-        
+
         try {
             // 替换参数
             $content = $this->replaceParameters($step->getContent(), $parameters, $step->getParameterPattern());
-            
+
             // 根据类型执行命令或脚本
             if ($step->getType() === ExecutionStepType::COMMAND) {
                 // TODO: 调用 server-command-bundle 执行命令
@@ -112,37 +116,37 @@ class AppExecutionStepService
                 // TODO: 调用 server-shell-bundle 执行脚本
                 $result = ['output' => 'Script execution simulation', 'exitCode' => 0];
             }
-            
+
             $log->setCommandOutput($result['output']);
             $log->setExitCode($result['exitCode']);
             /** @phpstan-ignore-next-line */
             $log->setStatus($result['exitCode'] === 0 ? LogStatus::SUCCESS : LogStatus::FAILED);
             $log->setMessage('执行完成');
-            
         } catch (\Throwable $e) {
             $log->setStatus(LogStatus::FAILED);
             $log->setMessage('执行失败: ' . $e->getMessage());
             $log->setExitCode(-1);
         }
-        
+
         $endTime = microtime(true);
         $log->setExecutionTime($endTime - $startTime);
-        
+
         // 保存日志
         $this->entityManager->persist($log);
         $this->entityManager->flush();
-        
+
         return $log;
     }
 
     /**
      * 替换参数
+     * @param array<string, mixed> $parameters
      */
     private function replaceParameters(string $content, array $parameters, string $pattern): string
     {
         $pattern = str_replace('PARAM_NAME', '([A-Z0-9_]+)', preg_quote($pattern, '/'));
-        
-        return preg_replace_callback(
+
+        $result = preg_replace_callback(
             '/' . $pattern . '/',
             function ($matches) use ($parameters) {
                 $paramName = $matches[1];
@@ -150,5 +154,7 @@ class AppExecutionStepService
             },
             $content
         );
+
+        return $result ?? $content;
     }
 }

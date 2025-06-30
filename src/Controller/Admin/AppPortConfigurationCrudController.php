@@ -168,6 +168,8 @@ class AppPortConfigurationCrudController extends AbstractCrudController
     {
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
+            ->add(Crud::PAGE_INDEX, Action::EDIT)
+            ->add(Crud::PAGE_INDEX, Action::DELETE)
             ->reorder(Crud::PAGE_INDEX, [Action::DETAIL, Action::EDIT, Action::DELETE]);
     }
 

@@ -61,14 +61,14 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
      * 安装步骤列表
      */
     #[ORM\OneToMany(targetEntity: AppExecutionStep::class, mappedBy: 'template', fetch: 'EXTRA_LAZY', orphanRemoval: true)]
-    #[ORM\OrderBy(['sequence' => 'ASC'])]
+    #[ORM\OrderBy(value: ['sequence' => 'ASC'])]
     private Collection $installSteps;
 
     /**
      * 卸载步骤列表
      */
     #[ORM\OneToMany(targetEntity: AppExecutionStep::class, mappedBy: 'template', fetch: 'EXTRA_LAZY', orphanRemoval: true)]
-    #[ORM\OrderBy(['sequence' => 'ASC'])]
+    #[ORM\OrderBy(value: ['sequence' => 'ASC'])]
     private Collection $uninstallSteps;
 
     /**
@@ -353,4 +353,5 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
     {
         $this->updatedFromIp = $updatedFromIp;
         return $this;
-    }}
+    }
+}

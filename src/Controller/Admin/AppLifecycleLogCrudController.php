@@ -34,9 +34,7 @@ use Symfony\Component\Form\Extension\Core\Type\EnumType;
  */
 class AppLifecycleLogCrudController extends AbstractCrudController
 {
-    public function __construct(
-    ) {
-    }
+    public function __construct() {}
 
     public static function getEntityFqcn(): string
     {
@@ -49,7 +47,7 @@ class AppLifecycleLogCrudController extends AbstractCrudController
             ->setEntityLabelInSingular('生命周期日志')
             ->setEntityLabelInPlural('生命周期日志列表')
             ->setPageTitle('index', '生命周期日志管理')
-            ->setPageTitle('detail', fn (AppLifecycleLog $log) => sprintf('日志 <strong>%s</strong> 详情', $log->getId()))
+            ->setPageTitle('detail', fn(AppLifecycleLog $log) => sprintf('日志 <strong>%s</strong> 详情', $log->getId()))
             ->setDefaultSort(['createTime' => 'DESC'])
             ->setSearchFields(['id', 'message', 'commandOutput'])
             ->setHelp('index', '生命周期日志记录了应用实例的各种操作和状态变更')
@@ -61,13 +59,13 @@ class AppLifecycleLogCrudController extends AbstractCrudController
     {
         yield IdField::new('id', 'ID')
             ->setMaxLength(9999);
-        
+
         yield AssociationField::new('instance', '应用实例')
             ->setTemplatePath('admin/field/instance_link.html.twig');
-        
+
         yield AssociationField::new('executionStep', '执行步骤')
             ->hideOnIndex();
-        
+
         yield ChoiceField::new('action', '操作类型')
             ->setFormType(EnumType::class)
             ->setFormTypeOptions([
@@ -78,14 +76,14 @@ class AppLifecycleLogCrudController extends AbstractCrudController
                 if (!$value instanceof LifecycleActionType) {
                     return '';
                 }
-                
-                return match($value) {
+
+                return match ($value) {
                     LifecycleActionType::INSTALL => '安装',
                     LifecycleActionType::UNINSTALL => '卸载',
                     LifecycleActionType::HEALTH_CHECK => '健康检查',
                 };
             });
-        
+
         yield ChoiceField::new('status', '状态')
             ->setFormType(EnumType::class)
             ->setFormTypeOptions([
@@ -96,32 +94,32 @@ class AppLifecycleLogCrudController extends AbstractCrudController
                 if (!$value instanceof LogStatus) {
                     return '';
                 }
-                
-                return match($value) {
+
+                return match ($value) {
                     LogStatus::SUCCESS => '<span class="badge bg-success">成功</span>',
                     LogStatus::FAILED => '<span class="badge bg-danger">失败</span>',
                 };
             })
             ->setTemplatePath('@ServerApplication/admin/field/status_badge.html.twig');
-        
+
         yield TextField::new('message', '消息')
             ->hideOnIndex();
-        
+
         yield CodeEditorField::new('commandOutput', '命令输出')
             ->hideOnIndex();
-        
+
         yield IntegerField::new('exitCode', '退出码')
             ->hideOnIndex();
-        
+
         yield TextField::new('executionTime', '执行时间')
             ->hideOnIndex()
             ->formatValue(function ($value) {
-                if ($value === null) {
+                if ($value === null || !is_numeric($value)) {
                     return '';
                 }
-                return number_format($value, 3) . ' 秒';
+                return number_format((float) $value, 3) . ' 秒';
             });
-        
+
         yield DateTimeField::new('createTime', '创建时间')
             ->setFormat('yyyy-MM-dd HH:mm:ss');
     }
@@ -158,11 +156,11 @@ class AppLifecycleLogCrudController extends AbstractCrudController
     public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
     {
         $queryBuilder = parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters);
-        
+
         return $queryBuilder
             ->select('entity, instance, executionStep')
             ->leftJoin('entity.instance', 'instance')
             ->leftJoin('entity.executionStep', 'executionStep')
             ->orderBy('entity.createTime', 'DESC');
     }
-} 
+}

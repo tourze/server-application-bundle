@@ -70,6 +70,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
     #[TrackColumn]
     private ?int $timeout = 60;
 
+    /**
+     * @var array<string, mixed>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true, options: ['comment' => '参数定义列表'])]
     #[TrackColumn]
     private ?array $parameters = [];
@@ -262,6 +265,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getParameters(): ?array
     {
         return $this->parameters;
@@ -338,4 +344,5 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
     {
         $this->updatedFromIp = $updatedFromIp;
         return $this;
-    }}
+    }
+}
