@@ -7,12 +7,14 @@ namespace ServerApplicationBundle\Service;
 use Doctrine\ORM\EntityManagerInterface;
 use ServerApplicationBundle\Entity\AppPortConfiguration;
 use ServerApplicationBundle\Entity\AppTemplate;
-use ServerApplicationBundle\Repository\AppPortConfigurationRepository;
 use ServerApplicationBundle\Enum\HealthCheckType;
+use ServerApplicationBundle\Repository\AppPortConfigurationRepository;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * 应用端口配置服务
  */
+#[Autoconfigure(public: true)]
 class AppPortConfigurationService
 {
     public function __construct(
@@ -23,6 +25,8 @@ class AppPortConfigurationService
 
     /**
      * 获取端口配置列表
+     *
+     * @return array<AppPortConfiguration>
      */
     public function findAll(): array
     {
@@ -43,7 +47,7 @@ class AppPortConfigurationService
     public function save(AppPortConfiguration $portConfiguration, bool $flush = true): void
     {
         $this->entityManager->persist($portConfiguration);
-        
+
         if ($flush) {
             $this->entityManager->flush();
         }
@@ -55,7 +59,7 @@ class AppPortConfigurationService
     public function remove(AppPortConfiguration $portConfiguration, bool $flush = true): void
     {
         $this->entityManager->remove($portConfiguration);
-        
+
         if ($flush) {
             $this->entityManager->flush();
         }
@@ -63,6 +67,8 @@ class AppPortConfigurationService
 
     /**
      * 获取模板的所有端口配置
+     *
+     * @return array<AppPortConfiguration>
      */
     public function findByTemplate(AppTemplate $template): array
     {
@@ -84,7 +90,12 @@ class AppPortConfigurationService
                 return $this->checkUdpPort($host, $actualPort);
             case HealthCheckType::COMMAND:
                 // 执行命令检测
-                return $this->executeHealthCheckCommand($portConfiguration->getHealthCheckConfig(), $host, $actualPort);
+                $config = $portConfiguration->getHealthCheckConfig();
+                if (null === $config) {
+                    return false;
+                }
+
+                return $this->executeHealthCheckCommand($config, $host, $actualPort);
             default:
                 return false;
         }
@@ -96,10 +107,11 @@ class AppPortConfigurationService
     private function checkTcpConnection(string $host, int $port, int $timeout): bool
     {
         $sock = @fsockopen($host, $port, $errno, $errstr, $timeout);
-        if (!$sock) {
+        if (false === $sock) {
             return false;
         }
         fclose($sock);
+
         return true;
     }
 
@@ -111,37 +123,62 @@ class AppPortConfigurationService
         // UDP端口检测逻辑
         // 简单实现，实际可能需要更复杂的逻辑
         $sock = @fsockopen('udp://' . $host, $port, $errno, $errstr, 1);
-        if (!$sock) {
+        if (false === $sock) {
             return false;
         }
         fclose($sock);
+
         return true;
     }
 
     /**
      * 执行健康检测命令
+     *
+     * @param array<string, mixed> $config
      */
     private function executeHealthCheckCommand(array $config, string $host, int $port): bool
     {
+        // 获取并验证命令配置
+        $commandConfig = $config['command'] ?? '';
+
+        // 确保命令是字符串类型
+        if (!is_string($commandConfig)) {
+            return false;
+        }
+
         // 替换命令中的变量
-        $command = $config['command'] ?? '';
-        $command = str_replace('{HOST}', $host, $command);
-        $command = str_replace('{PORT}', (string)$port, $command);
-        
+        $command = str_replace('{HOST}', $host, $commandConfig);
+        $command = str_replace('{PORT}', (string) $port, $command);
+
         // 执行命令
+        $output = [];
+        $returnVar = 0;
         exec($command, $output, $returnVar);
-        
+
         // 检查退出码
         if (isset($config['successExitCode'])) {
-            return $returnVar === (int)$config['successExitCode'];
+            $expected = $config['successExitCode'];
+            if (is_int($expected)) {
+                return $returnVar === $expected;
+            }
+            if (is_string($expected) && ctype_digit($expected)) {
+                return $returnVar === (int) $expected;
+            }
+
+            return false;
         }
-        
+
         // 检查输出内容
         if (isset($config['successOutput']) && count($output) > 0) {
-            return preg_match('/' . $config['successOutput'] . '/', implode("\n", $output)) === 1;
+            $successOutput = $config['successOutput'];
+            if (!is_string($successOutput) || $successOutput === '') {
+                return false;
+            }
+
+            return 1 === preg_match('/' . $successOutput . '/', implode("\n", $output));
         }
-        
+
         // 默认以退出码0为成功
-        return $returnVar === 0;
+        return 0 === $returnVar;
     }
-} 
+}

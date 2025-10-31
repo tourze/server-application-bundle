@@ -10,10 +10,13 @@ use Doctrine\Persistence\ObjectManager;
 use ServerApplicationBundle\Entity\AppExecutionStep;
 use ServerApplicationBundle\Entity\AppTemplate;
 use ServerApplicationBundle\Enum\ExecutionStepType;
+use Symfony\Component\DependencyInjection\Attribute\When;
 
 /**
  * 应用执行步骤数据填充
  */
+#[When(env: 'test')]
+#[When(env: 'dev')]
 class AppExecutionStepFixtures extends Fixture implements DependentFixtureInterface
 {
     // 使用常量定义引用名称
@@ -35,8 +38,7 @@ class AppExecutionStepFixtures extends Fixture implements DependentFixtureInterf
         $webNginxSetupStep->setUseSudo(true);
         $webNginxSetupStep->setTimeout(300);
         $webNginxSetupStep->setParameters([
-            [
-                'name' => 'NGINX_VERSION',
+            'NGINX_VERSION' => [
                 'description' => 'Nginx版本',
                 'default' => 'latest',
                 'required' => false,
@@ -93,8 +95,7 @@ nginx -t && systemctl reload nginx
         $dbMysqlInstallStep->setUseSudo(true);
         $dbMysqlInstallStep->setTimeout(600);
         $dbMysqlInstallStep->setParameters([
-            [
-                'name' => 'MYSQL_VERSION',
+            'MYSQL_VERSION' => [
                 'description' => 'MySQL版本',
                 'default' => '8.0',
                 'required' => false,
@@ -118,15 +119,14 @@ mysql -e "UPDATE mysql.user SET Password=PASSWORD(\'{{ROOT_PASSWORD}}\') WHERE U
 mysql -e "DELETE FROM mysql.user WHERE User=\'\';"
 mysql -e "DELETE FROM mysql.user WHERE User=\'root\' AND Host NOT IN (\'localhost\', \'127.0.0.1\', \'::1\');"
 mysql -e "DROP DATABASE IF EXISTS test;"
-mysql -e "DELETE FROM mysql.db WHERE Db=\'test\' OR Db=\'test\\_%\';"
+mysql -e "DELETE FROM mysql.db WHERE Db=\'test\' OR Db=\'test\_%\';"
 mysql -e "FLUSH PRIVILEGES;"
 ');
         $dbSecureStep->setWorkingDirectory('/tmp');
         $dbSecureStep->setUseSudo(true);
         $dbSecureStep->setTimeout(120);
         $dbSecureStep->setParameters([
-            [
-                'name' => 'ROOT_PASSWORD',
+            'ROOT_PASSWORD' => [
                 'description' => 'Root用户密码',
                 'default' => 'root_password',
                 'required' => true,
@@ -150,8 +150,7 @@ mysql -e "FLUSH PRIVILEGES;"
         $apiPhpSetupStep->setUseSudo(true);
         $apiPhpSetupStep->setTimeout(300);
         $apiPhpSetupStep->setParameters([
-            [
-                'name' => 'PHP_VERSION',
+            'PHP_VERSION' => [
                 'description' => 'PHP版本',
                 'default' => '8.1',
                 'required' => false,
@@ -199,4 +198,4 @@ composer --version
             AppTemplateFixtures::class,
         ];
     }
-} 
+}

@@ -7,10 +7,13 @@ namespace ServerApplicationBundle\DataFixtures;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use ServerApplicationBundle\Entity\AppTemplate;
+use Symfony\Component\DependencyInjection\Attribute\When;
 
 /**
  * 应用模板数据填充
  */
+#[When(env: 'test')]
+#[When(env: 'dev')]
 class AppTemplateFixtures extends Fixture
 {
     // 使用常量定义引用名称

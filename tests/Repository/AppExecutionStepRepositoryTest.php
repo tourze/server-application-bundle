@@ -7,34 +7,23 @@ namespace ServerApplicationBundle\Tests\Repository;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
-use ServerApplicationBundle\Entity\AppInstance;
+use ServerApplicationBundle\Entity\AppExecutionStep;
 use ServerApplicationBundle\Entity\AppTemplate;
-use ServerApplicationBundle\Enum\AppStatus;
-use ServerApplicationBundle\Repository\AppInstanceRepository;
+use ServerApplicationBundle\Enum\ExecutionStepType;
+use ServerApplicationBundle\Repository\AppExecutionStepRepository;
 use ServerApplicationBundle\Repository\AppTemplateRepository;
 use Tourze\PHPUnitSymfonyKernelTest\AbstractRepositoryTestCase;
 
 /**
  * @internal
  */
-#[CoversClass(AppInstanceRepository::class)]
+#[CoversClass(AppExecutionStepRepository::class)]
 #[RunTestsInSeparateProcesses]
-final class AppInstanceRepositoryTest extends AbstractRepositoryTestCase
+final class AppExecutionStepRepositoryTest extends AbstractRepositoryTestCase
 {
-    private AppInstanceRepository $repository;
+    private AppExecutionStepRepository $repository;
 
     private AppTemplateRepository $templateRepository;
-
-    protected function onSetUp(): void
-    {
-        /** @var AppInstanceRepository $repository */
-        $repository = self::getContainer()->get(AppInstanceRepository::class);
-        $this->repository = $repository;
-
-        /** @var AppTemplateRepository $templateRepository */
-        $templateRepository = self::getContainer()->get(AppTemplateRepository::class);
-        $this->templateRepository = $templateRepository;
-    }
 
     public function testRepositoryIsServiceEntityRepository(): void
     {
@@ -59,25 +48,34 @@ final class AppInstanceRepositoryTest extends AbstractRepositoryTestCase
             $template = $templates[0];
         }
 
-        // 创建新的 AppInstance 实例
-        $entity = new AppInstance();
+        // 创建新的 AppExecutionStep 实例
+        $entity = new AppExecutionStep();
         $entity->setTemplate($template);
-        $entity->setTemplateVersion('1.0.0');
-        $entity->setNodeId('node-test-' . uniqid());
-        $entity->setName('Test Instance ' . uniqid());
-        $entity->setStatus(AppStatus::STOPPED);
-        $entity->setEnvironmentVariables(['TEST_VAR' => 'test_value']);
-        $entity->setHealthy(false);
-        $entity->setLastHealthCheck(null);
+        $entity->setSequence(1);
+        $entity->setName('Test Step ' . uniqid());
+        $entity->setType(ExecutionStepType::COMMAND);
+        $entity->setContent('echo "test"');
+        $entity->setDescription('Test description');
 
         return $entity;
     }
 
     /**
-     * @return AppInstanceRepository
+     * @return AppExecutionStepRepository
      */
     protected function getRepository(): ServiceEntityRepository
     {
         return $this->repository;
+    }
+
+    protected function onSetUp(): void
+    {
+        /** @var AppExecutionStepRepository $repository */
+        $repository = self::getContainer()->get(AppExecutionStepRepository::class);
+        $this->repository = $repository;
+
+        /** @var AppTemplateRepository $templateRepository */
+        $templateRepository = self::getContainer()->get(AppTemplateRepository::class);
+        $this->templateRepository = $templateRepository;
     }
 }

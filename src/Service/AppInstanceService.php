@@ -8,10 +8,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use ServerApplicationBundle\Entity\AppInstance;
 use ServerApplicationBundle\Enum\AppStatus;
 use ServerApplicationBundle\Repository\AppInstanceRepository;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * 应用实例服务
  */
+#[Autoconfigure(public: true)]
 class AppInstanceService
 {
     public function __construct(
@@ -22,6 +24,8 @@ class AppInstanceService
 
     /**
      * 获取应用实例列表
+     *
+     * @return array<AppInstance>
      */
     public function findAll(): array
     {
@@ -42,7 +46,7 @@ class AppInstanceService
     public function save(AppInstance $appInstance, bool $flush = true): void
     {
         $this->entityManager->persist($appInstance);
-        
+
         if ($flush) {
             $this->entityManager->flush();
         }
@@ -54,7 +58,7 @@ class AppInstanceService
     public function remove(AppInstance $appInstance, bool $flush = true): void
     {
         $this->entityManager->remove($appInstance);
-        
+
         if ($flush) {
             $this->entityManager->flush();
         }
@@ -62,6 +66,8 @@ class AppInstanceService
 
     /**
      * 获取特定状态的应用实例
+     *
+     * @return array<AppInstance>
      */
     public function findByStatus(AppStatus $status): array
     {
@@ -124,7 +130,7 @@ class AppInstanceService
         // TODO: 实际健康检查逻辑，检查所有端口
 
         // 更新健康状态
-        $appInstance->setLastHealthCheck(new \DateTime());
+        $appInstance->setLastHealthCheck(new \DateTimeImmutable());
         $this->save($appInstance);
 
         return $appInstance->isHealthy();

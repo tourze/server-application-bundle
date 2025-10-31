@@ -5,37 +5,52 @@ declare(strict_types=1);
 namespace ServerApplicationBundle\Tests\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use ServerApplicationBundle\Entity\AppTemplate;
 use ServerApplicationBundle\Repository\AppTemplateRepository;
+use Tourze\PHPUnitSymfonyKernelTest\AbstractRepositoryTestCase;
 
 /**
- * AppTemplateRepository 测试类
+ * @internal
  */
-class AppTemplateRepositoryTest extends TestCase
+#[CoversClass(AppTemplateRepository::class)]
+#[RunTestsInSeparateProcesses]
+final class AppTemplateRepositoryTest extends AbstractRepositoryTestCase
 {
     private AppTemplateRepository $repository;
-    private ManagerRegistry $registry;
 
-    public function testExtendsServiceEntityRepository(): void
+    protected function onSetUp(): void
+    {
+        /** @var AppTemplateRepository $repository */
+        $repository = self::getContainer()->get(AppTemplateRepository::class);
+        $this->repository = $repository;
+    }
+
+    public function testRepositoryIsServiceEntityRepository(): void
     {
         $this->assertInstanceOf(ServiceEntityRepository::class, $this->repository);
     }
 
-    public function testGetClassName(): void
+    protected function createNewEntity(): object
     {
-        $this->assertTrue(class_exists(AppTemplate::class));
+        $entity = new AppTemplate();
+        $entity->setName('Test Template ' . uniqid());
+        $entity->setDescription('Test template description for testing');
+        $entity->setTags(['test', 'template']);
+        $entity->setEnabled(true);
+        $entity->setVersion('1.0.0');
+        $entity->setIsLatest(false);
+        $entity->setEnvironmentVariables(['ENV_VAR' => 'test_value']);
+
+        return $entity;
     }
 
-    public function testRepositoryIsCallable(): void
+    /**
+     * @return AppTemplateRepository
+     */
+    protected function getRepository(): ServiceEntityRepository
     {
-        $this->assertInstanceOf(AppTemplateRepository::class, $this->repository);
-    }
-
-    protected function setUp(): void
-    {
-        $this->registry = $this->createMock(ManagerRegistry::class);
-        $this->repository = new AppTemplateRepository($this->registry);
+        return $this->repository;
     }
 }

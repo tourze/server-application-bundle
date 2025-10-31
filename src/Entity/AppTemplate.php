@@ -9,56 +9,77 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use ServerApplicationBundle\Repository\AppTemplateRepository;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\Arrayable\AdminArrayInterface;
 use Tourze\Arrayable\ApiArrayInterface;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
+use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
+use Tourze\DoctrineIpBundle\Traits\IpTraceableAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 
 /**
  * 应用模板
+ *
+ * @implements AdminArrayInterface<string, mixed>
+ * @implements ApiArrayInterface<string, mixed>
  */
 #[ORM\Entity(repositoryClass: AppTemplateRepository::class)]
 #[ORM\Table(name: 'ims_server_app_template', options: ['comment' => '应用模板'])]
-#[ORM\Index(name: 'ims_server_app_template_idx_name', columns: ['name'])]
-#[ORM\Index(name: 'ims_server_app_template_idx_is_latest', columns: ['is_latest'])]
 class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
 {
     use TimestampableAware;
     use BlameableAware;
+    use IpTraceableAware;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '唯一标识符'])]
     private ?int $id = null;
 
     #[ORM\Column(type: Types::STRING, length: 100, options: ['comment' => '模板名称'])]
+    #[IndexColumn]
     #[TrackColumn]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 100)]
     private string $name;
 
     #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '模板描述'])]
     #[TrackColumn]
+    #[Assert\Length(max: 65535)]
     private ?string $description = null;
 
+    /**
+     * @var array<string>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true, options: ['comment' => '标签列表'])]
     #[TrackColumn]
+    #[Assert\Type(type: 'array')]
     private ?array $tags = [];
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否启用', 'default' => true])]
     #[TrackColumn]
+    #[Assert\NotNull]
+    #[Assert\Type(type: 'bool')]
     private bool $enabled = true;
 
     #[ORM\Column(type: Types::STRING, length: 20, options: ['comment' => '模板版本号'])]
     #[TrackColumn]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 20)]
     private string $version;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否为最新版本', 'default' => false])]
+    #[IndexColumn]
     #[TrackColumn]
+    #[Assert\NotNull]
+    #[Assert\Type(type: 'bool')]
     private bool $isLatest = false;
 
     /**
      * 安装步骤列表
+     *
+     * @var Collection<int, AppExecutionStep>
      */
     #[ORM\OneToMany(targetEntity: AppExecutionStep::class, mappedBy: 'template', fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     #[ORM\OrderBy(value: ['sequence' => 'ASC'])]
@@ -66,6 +87,8 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
 
     /**
      * 卸载步骤列表
+     *
+     * @var Collection<int, AppExecutionStep>
      */
     #[ORM\OneToMany(targetEntity: AppExecutionStep::class, mappedBy: 'template', fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     #[ORM\OrderBy(value: ['sequence' => 'ASC'])]
@@ -73,21 +96,19 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
 
     /**
      * 端口配置列表
+     *
+     * @var Collection<int, AppPortConfiguration>
      */
     #[ORM\OneToMany(targetEntity: AppPortConfiguration::class, mappedBy: 'template', fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     private Collection $portConfigurations;
 
+    /**
+     * @var array<string, mixed>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true, options: ['comment' => '环境变量默认值'])]
     #[TrackColumn]
+    #[Assert\Type(type: 'array')]
     private ?array $environmentVariables = [];
-
-    #[CreateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
-    private ?string $createdFromIp = null;
-
-    #[UpdateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '更新IP'])]
-    private ?string $updatedFromIp = null;
 
     /**
      * 构造函数
@@ -109,6 +130,8 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
 
     /**
      * 转为管理后台数组
+     *
+     * @return array<string, mixed>
      */
     public function toAdminArray(): array
     {
@@ -130,6 +153,8 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
 
     /**
      * 检索管理后台数组
+     *
+     * @return array<string, mixed>
      */
     public function retrieveAdminArray(): array
     {
@@ -138,6 +163,8 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
 
     /**
      * 转为API数组
+     *
+     * @return array<string, mixed>
      */
     public function toApiArray(): array
     {
@@ -155,6 +182,8 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
 
     /**
      * 检索API数组
+     *
+     * @return array<string, mixed>
      */
     public function retrieveApiArray(): array
     {
@@ -171,10 +200,9 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->name;
     }
 
-    public function setName(string $name): self
+    public function setName(string $name): void
     {
         $this->name = $name;
-        return $this;
     }
 
     public function getDescription(): ?string
@@ -182,21 +210,25 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->description;
     }
 
-    public function setDescription(?string $description): self
+    public function setDescription(?string $description): void
     {
         $this->description = $description;
-        return $this;
     }
 
+    /**
+     * @return array<string>|null
+     */
     public function getTags(): ?array
     {
         return $this->tags;
     }
 
-    public function setTags(?array $tags): self
+    /**
+     * @param array<string>|null $tags
+     */
+    public function setTags(?array $tags): void
     {
         $this->tags = $tags;
-        return $this;
     }
 
     public function isEnabled(): bool
@@ -204,10 +236,9 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->enabled;
     }
 
-    public function setEnabled(bool $enabled): self
+    public function setEnabled(bool $enabled): void
     {
         $this->enabled = $enabled;
-        return $this;
     }
 
     public function getVersion(): string
@@ -215,10 +246,9 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->version;
     }
 
-    public function setVersion(string $version): self
+    public function setVersion(string $version): void
     {
         $this->version = $version;
-        return $this;
     }
 
     public function isLatest(): bool
@@ -226,10 +256,9 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->isLatest;
     }
 
-    public function setIsLatest(bool $isLatest): self
+    public function setIsLatest(bool $isLatest): void
     {
         $this->isLatest = $isLatest;
-        return $this;
     }
 
     /**
@@ -240,17 +269,15 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->installSteps;
     }
 
-    public function addInstallStep(AppExecutionStep $installStep): self
+    public function addInstallStep(AppExecutionStep $installStep): void
     {
         if (!$this->installSteps->contains($installStep)) {
             $this->installSteps->add($installStep);
             $installStep->setTemplate($this);
         }
-
-        return $this;
     }
 
-    public function removeInstallStep(AppExecutionStep $installStep): self
+    public function removeInstallStep(AppExecutionStep $installStep): void
     {
         if ($this->installSteps->removeElement($installStep)) {
             // set the owning side to null (unless already changed)
@@ -258,8 +285,6 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
                 $installStep->setTemplate(null);
             }
         }
-
-        return $this;
     }
 
     /**
@@ -270,17 +295,15 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->uninstallSteps;
     }
 
-    public function addUninstallStep(AppExecutionStep $uninstallStep): self
+    public function addUninstallStep(AppExecutionStep $uninstallStep): void
     {
         if (!$this->uninstallSteps->contains($uninstallStep)) {
             $this->uninstallSteps->add($uninstallStep);
             $uninstallStep->setTemplate($this);
         }
-
-        return $this;
     }
 
-    public function removeUninstallStep(AppExecutionStep $uninstallStep): self
+    public function removeUninstallStep(AppExecutionStep $uninstallStep): void
     {
         if ($this->uninstallSteps->removeElement($uninstallStep)) {
             // set the owning side to null (unless already changed)
@@ -288,8 +311,6 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
                 $uninstallStep->setTemplate(null);
             }
         }
-
-        return $this;
     }
 
     /**
@@ -300,17 +321,15 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->portConfigurations;
     }
 
-    public function addPortConfiguration(AppPortConfiguration $portConfiguration): self
+    public function addPortConfiguration(AppPortConfiguration $portConfiguration): void
     {
         if (!$this->portConfigurations->contains($portConfiguration)) {
             $this->portConfigurations->add($portConfiguration);
             $portConfiguration->setTemplate($this);
         }
-
-        return $this;
     }
 
-    public function removePortConfiguration(AppPortConfiguration $portConfiguration): self
+    public function removePortConfiguration(AppPortConfiguration $portConfiguration): void
     {
         if ($this->portConfigurations->removeElement($portConfiguration)) {
             // set the owning side to null (unless already changed)
@@ -318,40 +337,41 @@ class AppTemplate implements \Stringable, AdminArrayInterface, ApiArrayInterface
                 $portConfiguration->setTemplate(null);
             }
         }
-
-        return $this;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getEnvironmentVariables(): ?array
     {
         return $this->environmentVariables;
     }
 
-    public function setEnvironmentVariables(?array $environmentVariables): self
+    /**
+     * @param array<string, mixed>|string|null $environmentVariables
+     */
+    public function setEnvironmentVariables($environmentVariables): void
     {
-        $this->environmentVariables = $environmentVariables;
-        return $this;
-    }
+        // 处理来自 CodeEditorField 的 JSON 字符串
+        if (is_string($environmentVariables)) {
+            if ('' === trim($environmentVariables)) {
+                $this->environmentVariables = [];
+            } else {
+                try {
+                    /** @var array<string, mixed>|null $decodedVars */
+                    $decodedVars = json_decode($environmentVariables, true, 512, JSON_THROW_ON_ERROR);
+                    if (!is_array($decodedVars) && null !== $decodedVars) {
+                        $this->environmentVariables = [];
 
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setCreatedFromIp(?string $createdFromIp): self
-    {
-        $this->createdFromIp = $createdFromIp;
-        return $this;
-    }
-
-    public function getUpdatedFromIp(): ?string
-    {
-        return $this->updatedFromIp;
-    }
-
-    public function setUpdatedFromIp(?string $updatedFromIp): self
-    {
-        $this->updatedFromIp = $updatedFromIp;
-        return $this;
+                        return;
+                    }
+                    $this->environmentVariables = $decodedVars;
+                } catch (\JsonException $e) {
+                    $this->environmentVariables = [];
+                }
+            }
+        } else {
+            $this->environmentVariables = $environmentVariables;
+        }
     }
 }

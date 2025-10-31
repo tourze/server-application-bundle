@@ -9,66 +9,84 @@ use Doctrine\ORM\Mapping as ORM;
 use ServerApplicationBundle\Enum\LifecycleActionType;
 use ServerApplicationBundle\Enum\LogStatus;
 use ServerApplicationBundle\Repository\AppLifecycleLogRepository;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\Arrayable\AdminArrayInterface;
 use Tourze\Arrayable\ApiArrayInterface;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
+use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
+use Tourze\DoctrineIpBundle\Traits\CreatedFromIpAware;
 use Tourze\DoctrineTimestampBundle\Traits\CreateTimeAware;
 use Tourze\DoctrineUserBundle\Traits\CreatedByAware;
 
 /**
  * 应用生命周期日志
+ *
+ * @implements AdminArrayInterface<string, mixed>
+ * @implements ApiArrayInterface<string, mixed>
  */
 #[ORM\Entity(repositoryClass: AppLifecycleLogRepository::class)]
 #[ORM\Table(name: 'ims_server_app_lifecycle_log', options: ['comment' => '应用生命周期日志'])]
-#[ORM\Index(name: 'ims_server_app_lifecycle_log_idx_instance', columns: ['instance_id'])]
-#[ORM\Index(name: 'ims_server_app_lifecycle_log_idx_execution_step', columns: ['execution_step_id'])]
-#[ORM\Index(name: 'ims_server_app_lifecycle_log_idx_action', columns: ['action'])]
-#[ORM\Index(name: 'ims_server_app_lifecycle_log_idx_status', columns: ['status'])]
 class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInterface
 {
     use CreateTimeAware;
     use CreatedByAware;
+    use CreatedFromIpAware;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '唯一标识符'])]
     private ?int $id = null;
 
+    #[ORM\Column(name: 'instance_id', type: Types::INTEGER, nullable: true, options: ['comment' => '应用实例ID'])]
+    #[IndexColumn]
+    #[Assert\PositiveOrZero]
+    private ?int $instanceId = null;
+
     /**
      * 所属应用实例
      */
-    #[ORM\ManyToOne(targetEntity: AppInstance::class, inversedBy: 'lifecycleLogs')]
+    #[ORM\ManyToOne(targetEntity: AppInstance::class, inversedBy: 'lifecycleLogs', cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'instance_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
     private ?AppInstance $instance = null;
+
+    #[ORM\Column(name: 'execution_step_id', type: Types::INTEGER, nullable: true, options: ['comment' => '执行步骤ID'])]
+    #[IndexColumn]
+    #[Assert\PositiveOrZero]
+    private ?int $executionStepId = null;
 
     /**
      * 关联的执行步骤
      */
-    #[ORM\ManyToOne(targetEntity: AppExecutionStep::class)]
+    #[ORM\ManyToOne(targetEntity: AppExecutionStep::class, cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'execution_step_id', referencedColumnName: 'id', nullable: true)]
     private ?AppExecutionStep $executionStep = null;
 
     #[ORM\Column(type: Types::STRING, enumType: LifecycleActionType::class, options: ['comment' => '操作类型(INSTALL/HEALTH_CHECK/UNINSTALL等)'])]
+    #[IndexColumn]
+    #[Assert\NotBlank]
+    #[Assert\Choice(callback: [LifecycleActionType::class, 'cases'])]
     private LifecycleActionType $action;
 
     #[ORM\Column(type: Types::STRING, enumType: LogStatus::class, options: ['comment' => '状态(SUCCESS/FAILED)'])]
+    #[IndexColumn]
+    #[Assert\NotBlank]
+    #[Assert\Choice(callback: [LogStatus::class, 'cases'])]
     private LogStatus $status;
 
     #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '详细消息'])]
+    #[Assert\Length(max: 65535)]
     private ?string $message = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '命令或脚本输出'])]
+    #[Assert\Length(max: 65535)]
     private ?string $commandOutput = null;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true, options: ['comment' => '退出码'])]
+    #[Assert\Range(min: -2147483648, max: 2147483647)]
     private ?int $exitCode = null;
 
     #[ORM\Column(type: Types::FLOAT, nullable: true, options: ['comment' => '执行时间(秒)'])]
+    #[Assert\PositiveOrZero]
     private ?float $executionTime = null;
-
-    #[CreateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
-    private ?string $createdFromIp = null;
 
     public function __toString(): string
     {
@@ -82,6 +100,8 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
 
     /**
      * 转为管理后台数组
+     *
+     * @return array<string, mixed>
      */
     public function toAdminArray(): array
     {
@@ -102,6 +122,8 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
 
     /**
      * 检索管理后台数组
+     *
+     * @return array<string, mixed>
      */
     public function retrieveAdminArray(): array
     {
@@ -110,6 +132,8 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
 
     /**
      * 转为API数组
+     *
+     * @return array<string, mixed>
      */
     public function toApiArray(): array
     {
@@ -126,6 +150,8 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
 
     /**
      * 检索API数组
+     *
+     * @return array<string, mixed>
      */
     public function retrieveApiArray(): array
     {
@@ -137,15 +163,43 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
         return $this->id;
     }
 
+    public function getInstanceId(): ?int
+    {
+        return $this->instanceId;
+    }
+
+    public function setInstanceId(?int $instanceId): void
+    {
+        $this->instanceId = $instanceId;
+    }
+
     public function getInstance(): ?AppInstance
     {
         return $this->instance;
     }
 
-    public function setInstance(?AppInstance $instance): self
+    public function setInstance(?AppInstance $instance): void
     {
         $this->instance = $instance;
-        return $this;
+        // 同步更新外键ID
+        if (null !== $instance) {
+            $instanceId = $instance->getId();
+            if (null !== $instanceId) {
+                $this->instanceId = $instanceId;
+            }
+        } else {
+            $this->instanceId = null;
+        }
+    }
+
+    public function getExecutionStepId(): ?int
+    {
+        return $this->executionStepId;
+    }
+
+    public function setExecutionStepId(?int $executionStepId): void
+    {
+        $this->executionStepId = $executionStepId;
     }
 
     public function getExecutionStep(): ?AppExecutionStep
@@ -153,10 +207,18 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
         return $this->executionStep;
     }
 
-    public function setExecutionStep(?AppExecutionStep $executionStep): self
+    public function setExecutionStep(?AppExecutionStep $executionStep): void
     {
         $this->executionStep = $executionStep;
-        return $this;
+        // 同步更新外键ID
+        if (null !== $executionStep) {
+            $stepId = $executionStep->getId();
+            if (null !== $stepId) {
+                $this->executionStepId = $stepId;
+            }
+        } else {
+            $this->executionStepId = null;
+        }
     }
 
     public function getAction(): LifecycleActionType
@@ -164,10 +226,9 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
         return $this->action;
     }
 
-    public function setAction(LifecycleActionType $action): self
+    public function setAction(LifecycleActionType $action): void
     {
         $this->action = $action;
-        return $this;
     }
 
     public function getStatus(): LogStatus
@@ -175,10 +236,9 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
         return $this->status;
     }
 
-    public function setStatus(LogStatus $status): self
+    public function setStatus(LogStatus $status): void
     {
         $this->status = $status;
-        return $this;
     }
 
     public function getMessage(): ?string
@@ -186,10 +246,9 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
         return $this->message;
     }
 
-    public function setMessage(?string $message): self
+    public function setMessage(?string $message): void
     {
         $this->message = $message;
-        return $this;
     }
 
     public function getCommandOutput(): ?string
@@ -197,10 +256,9 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
         return $this->commandOutput;
     }
 
-    public function setCommandOutput(?string $commandOutput): self
+    public function setCommandOutput(?string $commandOutput): void
     {
         $this->commandOutput = $commandOutput;
-        return $this;
     }
 
     public function getExitCode(): ?int
@@ -208,10 +266,9 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
         return $this->exitCode;
     }
 
-    public function setExitCode(?int $exitCode): self
+    public function setExitCode(?int $exitCode): void
     {
         $this->exitCode = $exitCode;
-        return $this;
     }
 
     public function getExecutionTime(): ?float
@@ -219,20 +276,8 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
         return $this->executionTime;
     }
 
-    public function setExecutionTime(?float $executionTime): self
+    public function setExecutionTime(?float $executionTime): void
     {
         $this->executionTime = $executionTime;
-        return $this;
-    }
-
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setCreatedFromIp(?string $createdFromIp): self
-    {
-        $this->createdFromIp = $createdFromIp;
-        return $this;
     }
 }

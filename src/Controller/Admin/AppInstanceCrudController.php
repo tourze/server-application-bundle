@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace ServerApplicationBundle\Controller\Admin;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminAction;
+use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminCrud;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FilterCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -38,13 +40,17 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 /**
  * 应用实例CRUD控制器
  */
-class AppInstanceCrudController extends AbstractCrudController
+#[AdminCrud(
+    routePath: '/server-application/app-instance',
+    routeName: 'server_application_app_instance'
+)]
+final class AppInstanceCrudController extends AbstractCrudController
 {
     public function __construct(
         private readonly AppInstanceService $appInstanceService,
-        private readonly EntityManagerInterface $entityManager,
         private readonly AdminUrlGenerator $adminUrlGenerator,
-    ) {}
+    ) {
+    }
 
     public static function getEntityFqcn(): string
     {
@@ -58,44 +64,49 @@ class AppInstanceCrudController extends AbstractCrudController
             ->setEntityLabelInPlural('应用实例列表')
             ->setPageTitle('index', '应用实例管理')
             ->setPageTitle('new', '创建应用实例')
-            ->setPageTitle('edit', fn(AppInstance $instance) => sprintf('编辑应用实例 <strong>%s</strong>', $instance->getName()))
-            ->setPageTitle('detail', fn(AppInstance $instance) => sprintf('应用实例 <strong>%s</strong> 详情', $instance->getName()))
+            ->setPageTitle('edit', fn (AppInstance $instance) => sprintf('编辑应用实例 <strong>%s</strong>', $instance->getName()))
+            ->setPageTitle('detail', fn (AppInstance $instance) => sprintf('应用实例 <strong>%s</strong> 详情', $instance->getName()))
             ->setDefaultSort(['createTime' => 'DESC'])
             ->setSearchFields(['id', 'name', 'nodeId', 'templateVersion'])
             ->setHelp('index', '应用实例是基于模板部署的实际运行应用')
-            ->setPaginatorPageSize(20);
+            ->setPaginatorPageSize(20)
+        ;
     }
 
     public function configureFields(string $pageName): iterable
     {
         yield IdField::new('id', 'ID')
             ->setMaxLength(9999)
-            ->hideOnForm();
+            ->hideOnForm()
+        ;
 
         yield TextField::new('name', '实例名称')
             ->setRequired(true)
-            ->setHelp('实例名称应简洁明了，唯一标识该实例');
+            ->setHelp('实例名称应简洁明了，唯一标识该实例')
+        ;
 
         yield AssociationField::new('template', '应用模板')
             ->setRequired(true)
             ->setFormTypeOptions([
-                'query_builder' => function () {
-                    return $this->entityManager->createQueryBuilder()
-                        ->select('t')
-                        ->from(AppTemplate::class, 't')
+                'query_builder' => function (EntityRepository $repository) {
+                    return $repository->createQueryBuilder('t')
                         ->where('t.enabled = true')
                         ->orderBy('t.name', 'ASC')
-                        ->addOrderBy('t.version', 'DESC');
+                        ->addOrderBy('t.version', 'DESC')
+                    ;
                 },
             ])
-            ->setHelp('选择实例基于的应用模板');
+            ->setHelp('选择实例基于的应用模板')
+        ;
 
         yield TextField::new('templateVersion', '模板版本')
-            ->onlyOnDetail();
+            ->onlyOnDetail()
+        ;
 
         yield TextField::new('nodeId', '服务器节点ID')
             ->setRequired(true)
-            ->setHelp('部署实例的服务器节点ID');
+            ->setHelp('部署实例的服务器节点ID')
+        ;
 
         yield ChoiceField::new('status', '状态')
             ->setFormType(SymfonyEnumType::class)
@@ -116,30 +127,39 @@ class AppInstanceCrudController extends AbstractCrudController
                     AppStatus::STOPPED => '<span class="badge bg-secondary">已停止</span>',
                 };
             })
-            ->setTemplatePath('@ServerApplication/admin/field/status_badge.html.twig');
+            ->setTemplatePath('@ServerApplication/admin/field/status_badge.html.twig')
+        ;
 
         yield CodeEditorField::new('environmentVariables', '环境变量')
             ->hideOnIndex()
             ->formatValue(function ($value) {
                 return is_array($value) ? json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : $value;
             })
-            ->setHelp('以JSON格式配置环境变量值');
+            ->setFormTypeOptions([
+                'attr' => ['data-ea-widget' => 'ea-code-editor'],
+            ])
+            ->setHelp('以JSON格式配置环境变量值')
+        ;
 
         yield BooleanField::new('healthy', '健康状态')
             ->renderAsSwitch(false)
-            ->setHelp('实例的健康状态');
+            ->setHelp('实例的健康状态')
+        ;
 
         yield DateTimeField::new('lastHealthCheck', '上次健康检查')
             ->hideOnForm()
-            ->setFormat('yyyy-MM-dd HH:mm:ss');
+            ->setFormat('yyyy-MM-dd HH:mm:ss')
+        ;
 
         yield DateTimeField::new('createTime', '创建时间')
             ->hideOnForm()
-            ->setFormat('yyyy-MM-dd HH:mm:ss');
+            ->setFormat('yyyy-MM-dd HH:mm:ss')
+        ;
 
         yield DateTimeField::new('updateTime', '更新时间')
             ->hideOnForm()
-            ->setFormat('yyyy-MM-dd HH:mm:ss');
+            ->setFormat('yyyy-MM-dd HH:mm:ss')
+        ;
     }
 
     public function configureFilters(Filters $filters): Filters
@@ -153,40 +173,46 @@ class AppInstanceCrudController extends AbstractCrudController
             ->add(TextFilter::new('name', '实例名称'))
             ->add(EntityFilter::new('template', '应用模板'))
             ->add(TextFilter::new('nodeId', '服务器节点ID'))
-            ->add(ChoiceFilter::new('status', '状态')->setChoices($statusChoices));
+            ->add(ChoiceFilter::new('status', '状态')->setChoices($statusChoices))
+        ;
     }
 
     public function configureActions(Actions $actions): Actions
     {
         $deploy = Action::new('deploy', '部署')
             ->linkToCrudAction('deployAction')
-            ->displayIf(fn(AppInstance $entity) => in_array($entity->getStatus(), [AppStatus::FAILED, AppStatus::STOPPED]))
+            ->displayIf(fn (AppInstance $entity) => in_array($entity->getStatus(), [AppStatus::FAILED, AppStatus::STOPPED], true))
             ->setCssClass('btn btn-primary')
-            ->setIcon('fa fa-rocket');
+            ->setIcon('fa fa-rocket')
+        ;
 
         $start = Action::new('start', '启动')
             ->linkToCrudAction('startAction')
-            ->displayIf(fn(AppInstance $entity) => $entity->getStatus() === AppStatus::STOPPED)
+            ->displayIf(fn (AppInstance $entity) => AppStatus::STOPPED === $entity->getStatus())
             ->setCssClass('btn btn-success')
-            ->setIcon('fa fa-play');
+            ->setIcon('fa fa-play')
+        ;
 
         $stop = Action::new('stop', '停止')
             ->linkToCrudAction('stopAction')
-            ->displayIf(fn(AppInstance $entity) => $entity->getStatus() === AppStatus::RUNNING)
+            ->displayIf(fn (AppInstance $entity) => AppStatus::RUNNING === $entity->getStatus())
             ->setCssClass('btn btn-warning')
-            ->setIcon('fa fa-pause');
+            ->setIcon('fa fa-pause')
+        ;
 
         $uninstall = Action::new('uninstall', '卸载')
             ->linkToCrudAction('uninstallAction')
-            ->displayIf(fn(AppInstance $entity) => in_array($entity->getStatus(), [AppStatus::RUNNING, AppStatus::STOPPED, AppStatus::FAILED]))
+            ->displayIf(fn (AppInstance $entity) => in_array($entity->getStatus(), [AppStatus::RUNNING, AppStatus::STOPPED, AppStatus::FAILED], true))
             ->setCssClass('btn btn-danger')
-            ->setIcon('fa fa-trash');
+            ->setIcon('fa fa-trash')
+        ;
 
         $checkHealth = Action::new('checkHealth', '健康检查')
             ->linkToCrudAction('checkHealthAction')
-            ->displayIf(fn(AppInstance $entity) => in_array($entity->getStatus(), [AppStatus::RUNNING]))
+            ->displayIf(fn (AppInstance $entity) => in_array($entity->getStatus(), [AppStatus::RUNNING], true))
             ->setCssClass('btn btn-info')
-            ->setIcon('fa fa-heartbeat');
+            ->setIcon('fa fa-heartbeat')
+        ;
 
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
@@ -195,7 +221,7 @@ class AppInstanceCrudController extends AbstractCrudController
             ->add(Crud::PAGE_DETAIL, $stop)
             ->add(Crud::PAGE_DETAIL, $uninstall)
             ->add(Crud::PAGE_DETAIL, $checkHealth)
-            ->reorder(Crud::PAGE_INDEX, [Action::DETAIL, Action::EDIT, Action::DELETE]);
+        ;
     }
 
     public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
@@ -205,7 +231,8 @@ class AppInstanceCrudController extends AbstractCrudController
         return $queryBuilder
             ->select('entity, template')
             ->leftJoin('entity.template', 'template')
-            ->orderBy('entity.createTime', 'DESC');
+            ->orderBy('entity.createTime', 'DESC')
+        ;
     }
 
     /**
@@ -214,8 +241,8 @@ class AppInstanceCrudController extends AbstractCrudController
     #[AdminAction(routePath: '{id}/deploy', routeName: 'deployAction')]
     public function deployAction(AdminContext $context): RedirectResponse
     {
-        /** @var AppInstance $instance */
         $instance = $context->getEntity()->getInstance();
+        assert($instance instanceof AppInstance);
 
         $this->appInstanceService->deploy($instance);
 
@@ -236,8 +263,8 @@ class AppInstanceCrudController extends AbstractCrudController
     #[AdminAction(routePath: '{id}/start', routeName: 'startAction')]
     public function startAction(AdminContext $context): RedirectResponse
     {
-        /** @var AppInstance $instance */
         $instance = $context->getEntity()->getInstance();
+        assert($instance instanceof AppInstance);
 
         $this->appInstanceService->start($instance);
 
@@ -258,8 +285,8 @@ class AppInstanceCrudController extends AbstractCrudController
     #[AdminAction(routePath: '{id}/stop', routeName: 'stopAction')]
     public function stopAction(AdminContext $context): RedirectResponse
     {
-        /** @var AppInstance $instance */
         $instance = $context->getEntity()->getInstance();
+        assert($instance instanceof AppInstance);
 
         $this->appInstanceService->stop($instance);
 
@@ -280,8 +307,8 @@ class AppInstanceCrudController extends AbstractCrudController
     #[AdminAction(routePath: '{id}/uninstall', routeName: 'uninstallAction')]
     public function uninstallAction(AdminContext $context): RedirectResponse
     {
-        /** @var AppInstance $instance */
         $instance = $context->getEntity()->getInstance();
+        assert($instance instanceof AppInstance);
 
         $this->appInstanceService->uninstall($instance);
 
@@ -302,8 +329,8 @@ class AppInstanceCrudController extends AbstractCrudController
     #[AdminAction(routePath: '{id}/check-health', routeName: 'checkHealthAction')]
     public function checkHealthAction(AdminContext $context): RedirectResponse
     {
-        /** @var AppInstance $instance */
         $instance = $context->getEntity()->getInstance();
+        assert($instance instanceof AppInstance);
 
         $healthy = $this->appInstanceService->checkHealth($instance);
 
@@ -323,25 +350,22 @@ class AppInstanceCrudController extends AbstractCrudController
     }
 
     /**
-     * 保存前处理JSON字段
+     * 保存前处理字段
+     * @param object $entityInstance
      */
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
-        if ($entityInstance instanceof AppInstance) {
-            // 处理环境变量JSON
-            $envVars = $entityInstance->getEnvironmentVariables();
-            if ($envVars === null) {
-                $entityInstance->setEnvironmentVariables([]);
-            }
+        if (!$entityInstance instanceof AppInstance) {
+            parent::persistEntity($entityManager, $entityInstance);
 
-            // ID是自动生成的，无需手动设置
-
-            // 设置模板版本
-            $entityInstance->setTemplateVersion($entityInstance->getTemplate()->getVersion());
-
-            // 设置初始状态
-            $entityInstance->setStatus(AppStatus::STOPPED);
+            return;
         }
+
+        // 保存前同步模板版本，确保实例记录模板快照
+        $entityInstance->setTemplateVersion($entityInstance->getTemplate()->getVersion());
+
+        // 新建实例统一设置为停止状态，避免自动运行
+        $entityInstance->setStatus(AppStatus::STOPPED);
 
         parent::persistEntity($entityManager, $entityInstance);
     }

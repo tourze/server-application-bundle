@@ -5,14 +5,18 @@ namespace ServerApplicationBundle\Service;
 use Knp\Menu\ItemInterface;
 use ServerApplicationBundle\Entity\AppExecutionStep;
 use ServerApplicationBundle\Entity\AppInstance;
+use ServerApplicationBundle\Entity\AppLifecycleLog;
 use ServerApplicationBundle\Entity\AppPortConfiguration;
+use ServerApplicationBundle\Entity\AppPortMapping;
 use ServerApplicationBundle\Entity\AppTemplate;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Tourze\EasyAdminMenuBundle\Service\LinkGeneratorInterface;
 use Tourze\EasyAdminMenuBundle\Service\MenuProviderInterface;
 
-class AdminMenu implements MenuProviderInterface
+#[Autoconfigure(public: true)]
+readonly class AdminMenu implements MenuProviderInterface
 {
-    public function __construct(private readonly LinkGeneratorInterface $linkGenerator)
+    public function __construct(private LinkGeneratorInterface $linkGenerator)
     {
     }
 
@@ -22,24 +26,45 @@ class AdminMenu implements MenuProviderInterface
             $item->addChild('应用管理');
         }
 
-        $item->getChild('应用管理')
+        $appManagementMenu = $item->getChild('应用管理');
+        if (null === $appManagementMenu) {
+            return;
+        }
+
+        $appManagementMenu
             ->addChild('应用实例')
             ->setUri($this->linkGenerator->getCurdListPage(AppInstance::class))
-            ->setAttribute('icon', 'fas fa-cube');
+            ->setAttribute('icon', 'fas fa-cube')
+        ;
 
-        $item->getChild('应用管理')
+        $appManagementMenu
             ->addChild('应用模板')
             ->setUri($this->linkGenerator->getCurdListPage(AppTemplate::class))
-            ->setAttribute('icon', 'fas fa-copy');
+            ->setAttribute('icon', 'fas fa-copy')
+        ;
 
-        $item->getChild('应用管理')
+        $appManagementMenu
             ->addChild('执行步骤')
             ->setUri($this->linkGenerator->getCurdListPage(AppExecutionStep::class))
-            ->setAttribute('icon', 'fas fa-list-check');
+            ->setAttribute('icon', 'fas fa-list-check')
+        ;
 
-        $item->getChild('应用管理')
+        $appManagementMenu
             ->addChild('端口配置')
             ->setUri($this->linkGenerator->getCurdListPage(AppPortConfiguration::class))
-            ->setAttribute('icon', 'fas fa-network-wired');
+            ->setAttribute('icon', 'fas fa-network-wired')
+        ;
+
+        $appManagementMenu
+            ->addChild('端口映射')
+            ->setUri($this->linkGenerator->getCurdListPage(AppPortMapping::class))
+            ->setAttribute('icon', 'fas fa-route')
+        ;
+
+        $appManagementMenu
+            ->addChild('生命周期日志')
+            ->setUri($this->linkGenerator->getCurdListPage(AppLifecycleLog::class))
+            ->setAttribute('icon', 'fas fa-history')
+        ;
     }
 }

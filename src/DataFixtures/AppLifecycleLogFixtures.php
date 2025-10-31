@@ -11,10 +11,13 @@ use ServerApplicationBundle\Entity\AppInstance;
 use ServerApplicationBundle\Entity\AppLifecycleLog;
 use ServerApplicationBundle\Enum\LifecycleActionType;
 use ServerApplicationBundle\Enum\LogStatus;
+use Symfony\Component\DependencyInjection\Attribute\When;
 
 /**
  * 应用生命周期日志数据填充
  */
+#[When(env: 'test')]
+#[When(env: 'dev')]
 class AppLifecycleLogFixtures extends Fixture implements DependentFixtureInterface
 {
     public function load(ObjectManager $manager): void

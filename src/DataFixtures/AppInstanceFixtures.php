@@ -10,10 +10,13 @@ use Doctrine\Persistence\ObjectManager;
 use ServerApplicationBundle\Entity\AppInstance;
 use ServerApplicationBundle\Entity\AppTemplate;
 use ServerApplicationBundle\Enum\AppStatus;
+use Symfony\Component\DependencyInjection\Attribute\When;
 
 /**
  * 应用实例数据填充
  */
+#[When(env: 'test')]
+#[When(env: 'dev')]
 class AppInstanceFixtures extends Fixture implements DependentFixtureInterface
 {
     // 使用常量定义引用名称
@@ -35,7 +38,7 @@ class AppInstanceFixtures extends Fixture implements DependentFixtureInterface
             'PORT' => '8080',
         ]);
         $webInstance->setHealthy(true);
-        $webInstance->setLastHealthCheck(new \DateTime());
+        $webInstance->setLastHealthCheck(new \DateTimeImmutable());
 
         $manager->persist($webInstance);
 
@@ -53,7 +56,7 @@ class AppInstanceFixtures extends Fixture implements DependentFixtureInterface
             'MYSQL_PASSWORD' => 'secure_password',
         ]);
         $dbInstance->setHealthy(true);
-        $dbInstance->setLastHealthCheck(new \DateTime());
+        $dbInstance->setLastHealthCheck(new \DateTimeImmutable());
 
         $manager->persist($dbInstance);
 
@@ -85,7 +88,7 @@ class AppInstanceFixtures extends Fixture implements DependentFixtureInterface
             'PORT' => '3000',
         ]);
         $stoppedWebInstance->setHealthy(false);
-        $stoppedWebInstance->setLastHealthCheck(new \DateTime('-1 day'));
+        $stoppedWebInstance->setLastHealthCheck(new \DateTimeImmutable('-1 day'));
 
         $manager->persist($stoppedWebInstance);
 

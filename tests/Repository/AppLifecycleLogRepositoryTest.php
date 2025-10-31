@@ -5,37 +5,53 @@ declare(strict_types=1);
 namespace ServerApplicationBundle\Tests\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use ServerApplicationBundle\Entity\AppLifecycleLog;
+use ServerApplicationBundle\Enum\LifecycleActionType;
+use ServerApplicationBundle\Enum\LogStatus;
 use ServerApplicationBundle\Repository\AppLifecycleLogRepository;
+use Tourze\PHPUnitSymfonyKernelTest\AbstractRepositoryTestCase;
 
 /**
- * AppLifecycleLogRepository 测试类
+ * @internal
  */
-class AppLifecycleLogRepositoryTest extends TestCase
+#[CoversClass(AppLifecycleLogRepository::class)]
+#[RunTestsInSeparateProcesses]
+final class AppLifecycleLogRepositoryTest extends AbstractRepositoryTestCase
 {
     private AppLifecycleLogRepository $repository;
-    private ManagerRegistry $registry;
 
-    public function testExtendsServiceEntityRepository(): void
+    protected function onSetUp(): void
+    {
+        /** @var AppLifecycleLogRepository $repository */
+        $repository = self::getContainer()->get(AppLifecycleLogRepository::class);
+        $this->repository = $repository;
+    }
+
+    public function testRepositoryIsServiceEntityRepository(): void
     {
         $this->assertInstanceOf(ServiceEntityRepository::class, $this->repository);
     }
 
-    public function testGetClassName(): void
+    protected function createNewEntity(): object
     {
-        $this->assertTrue(class_exists(AppLifecycleLog::class));
+        $entity = new AppLifecycleLog();
+        $entity->setAction(LifecycleActionType::INSTALL);
+        $entity->setStatus(LogStatus::SUCCESS);
+        $entity->setMessage('Test lifecycle log message ' . uniqid());
+        $entity->setCommandOutput('Test command output');
+        $entity->setExitCode(0);
+        $entity->setExecutionTime(1.5);
+
+        return $entity;
     }
 
-    public function testRepositoryIsCallable(): void
+    /**
+     * @return AppLifecycleLogRepository
+     */
+    protected function getRepository(): ServiceEntityRepository
     {
-        $this->assertInstanceOf(AppLifecycleLogRepository::class, $this->repository);
-    }
-
-    protected function setUp(): void
-    {
-        $this->registry = $this->createMock(ManagerRegistry::class);
-        $this->repository = new AppLifecycleLogRepository($this->registry);
+        return $this->repository;
     }
 }

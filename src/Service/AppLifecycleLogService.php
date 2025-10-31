@@ -10,10 +10,12 @@ use ServerApplicationBundle\Entity\AppLifecycleLog;
 use ServerApplicationBundle\Enum\LifecycleActionType;
 use ServerApplicationBundle\Enum\LogStatus;
 use ServerApplicationBundle\Repository\AppLifecycleLogRepository;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * 应用生命周期日志服务
  */
+#[Autoconfigure(public: true)]
 class AppLifecycleLogService
 {
     public function __construct(
@@ -24,6 +26,8 @@ class AppLifecycleLogService
 
     /**
      * 获取生命周期日志列表
+     *
+     * @return array<AppLifecycleLog>
      */
     public function findAll(): array
     {
@@ -44,7 +48,7 @@ class AppLifecycleLogService
     public function save(AppLifecycleLog $lifecycleLog, bool $flush = true): void
     {
         $this->entityManager->persist($lifecycleLog);
-        
+
         if ($flush) {
             $this->entityManager->flush();
         }
@@ -56,7 +60,7 @@ class AppLifecycleLogService
     public function remove(AppLifecycleLog $lifecycleLog, bool $flush = true): void
     {
         $this->entityManager->remove($lifecycleLog);
-        
+
         if ($flush) {
             $this->entityManager->flush();
         }
@@ -64,6 +68,8 @@ class AppLifecycleLogService
 
     /**
      * 获取实例的所有生命周期日志
+     *
+     * @return array<AppLifecycleLog>
      */
     public function findByInstance(AppInstance $instance): array
     {
@@ -75,6 +81,8 @@ class AppLifecycleLogService
 
     /**
      * 获取实例的特定操作类型日志
+     *
+     * @return array<AppLifecycleLog>
      */
     public function findByInstanceAndAction(AppInstance $instance, LifecycleActionType $action): array
     {
@@ -94,7 +102,7 @@ class AppLifecycleLogService
         ?string $message = null,
         ?string $commandOutput = null,
         ?int $exitCode = null,
-        ?float $executionTime = null
+        ?float $executionTime = null,
     ): AppLifecycleLog {
         $log = new AppLifecycleLog();
         $log->setInstance($instance);
@@ -104,9 +112,9 @@ class AppLifecycleLogService
         $log->setCommandOutput($commandOutput);
         $log->setExitCode($exitCode);
         $log->setExecutionTime($executionTime);
-        
+
         $this->save($log);
-        
+
         return $log;
     }
 
@@ -174,4 +182,4 @@ class AppLifecycleLogService
             $success ? '卸载完成' : '卸载失败'
         );
     }
-} 
+}

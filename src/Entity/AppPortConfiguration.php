@@ -9,77 +9,97 @@ use Doctrine\ORM\Mapping as ORM;
 use ServerApplicationBundle\Enum\HealthCheckType;
 use ServerApplicationBundle\Enum\ProtocolType;
 use ServerApplicationBundle\Repository\AppPortConfigurationRepository;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\Arrayable\AdminArrayInterface;
 use Tourze\Arrayable\ApiArrayInterface;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
+use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
+use Tourze\DoctrineIpBundle\Traits\IpTraceableAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 
 /**
  * 应用端口配置
+ *
+ * @implements AdminArrayInterface<string, mixed>
+ * @implements ApiArrayInterface<string, mixed>
  */
 #[ORM\Entity(repositoryClass: AppPortConfigurationRepository::class)]
 #[ORM\Table(name: 'ims_server_app_port_configuration', options: ['comment' => '应用端口配置'])]
-#[ORM\Index(name: 'ims_server_app_port_configuration_idx_template', columns: ['template_id'])]
-#[ORM\Index(name: 'ims_server_app_port_configuration_idx_port', columns: ['port'])]
-#[ORM\Index(name: 'ims_server_app_port_configuration_idx_protocol', columns: ['protocol'])]
 class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArrayInterface
 {
     use TimestampableAware;
     use BlameableAware;
+    use IpTraceableAware;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '唯一标识符'])]
     private ?int $id = null;
 
+    #[ORM\Column(name: 'template_id', type: Types::INTEGER, options: ['comment' => '应用模板ID'])]
+    #[IndexColumn]
+    #[Assert\NotNull]
+    #[Assert\PositiveOrZero]
+    private int $templateId;
+
     /**
      * 所属应用模板
      */
-    #[ORM\ManyToOne(targetEntity: AppTemplate::class, inversedBy: 'portConfigurations')]
+    #[ORM\ManyToOne(targetEntity: AppTemplate::class, inversedBy: 'portConfigurations', cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'template_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
-    private AppTemplate $template;
+    private ?AppTemplate $template = null;
 
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '端口号'])]
+    #[IndexColumn]
     #[TrackColumn]
+    #[Assert\NotBlank]
+    #[Assert\Range(min: 1, max: 65535)]
     private int $port;
 
     #[ORM\Column(type: Types::STRING, enumType: ProtocolType::class, options: ['comment' => '协议(TCP/UDP)'])]
+    #[IndexColumn]
     #[TrackColumn]
+    #[Assert\NotBlank]
+    #[Assert\Choice(callback: [ProtocolType::class, 'cases'])]
     private ProtocolType $protocol;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '描述'])]
     #[TrackColumn]
+    #[Assert\Length(max: 255)]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::STRING, enumType: HealthCheckType::class, options: ['comment' => '健康检测类型(TCP_CONNECT/UDP_PORT_CHECK/COMMAND)'])]
     #[TrackColumn]
+    #[Assert\NotBlank]
+    #[Assert\Choice(callback: [HealthCheckType::class, 'cases'])]
     private HealthCheckType $healthCheckType;
 
+    /**
+     * @var array<string, mixed>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true, options: ['comment' => '健康检测配置(JSON格式)'])]
     #[TrackColumn]
+    #[Assert\Type(type: 'array')]
     private ?array $healthCheckConfig = [];
 
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '健康检测间隔(秒)', 'default' => 60])]
     #[TrackColumn]
+    #[Assert\NotNull]
+    #[Assert\Positive]
     private int $healthCheckInterval = 60;
 
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '健康检测超时(秒)', 'default' => 5])]
     #[TrackColumn]
+    #[Assert\NotNull]
+    #[Assert\Positive]
     private int $healthCheckTimeout = 5;
 
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '健康检测重试次数', 'default' => 3])]
     #[TrackColumn]
+    #[Assert\NotNull]
+    #[Assert\PositiveOrZero]
     private int $healthCheckRetries = 3;
-
-    #[CreateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
-    private ?string $createdFromIp = null;
-
-    #[UpdateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '更新IP'])]
-    private ?string $updatedFromIp = null;
 
     public function __toString(): string
     {
@@ -88,12 +108,14 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
 
     /**
      * 转为管理后台数组
+     *
+     * @return array<string, mixed>
      */
     public function toAdminArray(): array
     {
         return [
             'id' => $this->id,
-            'template' => $this->template->getId(),
+            'template' => $this->templateId,
             'port' => $this->port,
             'protocol' => $this->protocol->value,
             'description' => $this->description,
@@ -112,6 +134,9 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
     /**
      * 检索管理后台数组
      */
+    /**
+     * @return array<string, mixed>
+     */
     public function retrieveAdminArray(): array
     {
         return $this->toAdminArray();
@@ -119,6 +144,8 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
 
     /**
      * 转为API数组
+     *
+     * @return array<string, mixed>
      */
     public function toApiArray(): array
     {
@@ -138,6 +165,9 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
     /**
      * 检索API数组
      */
+    /**
+     * @return array<string, mixed>
+     */
     public function retrieveApiArray(): array
     {
         return $this->toApiArray();
@@ -148,15 +178,31 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
         return $this->id;
     }
 
-    public function getTemplate(): AppTemplate
+    public function getTemplateId(): int
+    {
+        return $this->templateId;
+    }
+
+    public function setTemplateId(int $templateId): void
+    {
+        $this->templateId = $templateId;
+    }
+
+    public function getTemplate(): ?AppTemplate
     {
         return $this->template;
     }
 
-    public function setTemplate(?AppTemplate $template): self
+    public function setTemplate(?AppTemplate $template): void
     {
         $this->template = $template;
-        return $this;
+        // 同步更新外键ID
+        if (null !== $template) {
+            $templateId = $template->getId();
+            if (null !== $templateId) {
+                $this->templateId = $templateId;
+            }
+        }
     }
 
     public function getPort(): int
@@ -164,10 +210,9 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
         return $this->port;
     }
 
-    public function setPort(int $port): self
+    public function setPort(int $port): void
     {
         $this->port = $port;
-        return $this;
     }
 
     public function getProtocol(): ProtocolType
@@ -175,10 +220,9 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
         return $this->protocol;
     }
 
-    public function setProtocol(ProtocolType $protocol): self
+    public function setProtocol(ProtocolType $protocol): void
     {
         $this->protocol = $protocol;
-        return $this;
     }
 
     public function getDescription(): ?string
@@ -186,10 +230,9 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
         return $this->description;
     }
 
-    public function setDescription(?string $description): self
+    public function setDescription(?string $description): void
     {
         $this->description = $description;
-        return $this;
     }
 
     public function getHealthCheckType(): HealthCheckType
@@ -197,21 +240,42 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
         return $this->healthCheckType;
     }
 
-    public function setHealthCheckType(HealthCheckType $healthCheckType): self
+    public function setHealthCheckType(HealthCheckType $healthCheckType): void
     {
         $this->healthCheckType = $healthCheckType;
-        return $this;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getHealthCheckConfig(): ?array
     {
         return $this->healthCheckConfig;
     }
 
-    public function setHealthCheckConfig(?array $healthCheckConfig): self
+    /**
+     * @param array<string, mixed>|string|null $healthCheckConfig
+     */
+    public function setHealthCheckConfig($healthCheckConfig): void
     {
-        $this->healthCheckConfig = $healthCheckConfig;
-        return $this;
+        // 处理来自 CodeEditorField 的 JSON 字符串
+        if (is_string($healthCheckConfig)) {
+            if ('' === trim($healthCheckConfig)) {
+                $this->healthCheckConfig = [];
+            } else {
+                try {
+                    $decodedConfig = json_decode($healthCheckConfig, true, 512, JSON_THROW_ON_ERROR);
+                    // 确保 json_decode 返回的是数组,否则设为空数组
+                    /** @var array<string, mixed> $validConfig */
+                    $validConfig = is_array($decodedConfig) ? $decodedConfig : [];
+                    $this->healthCheckConfig = $validConfig;
+                } catch (\JsonException $e) {
+                    $this->healthCheckConfig = [];
+                }
+            }
+        } else {
+            $this->healthCheckConfig = $healthCheckConfig;
+        }
     }
 
     public function getHealthCheckInterval(): int
@@ -219,10 +283,9 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
         return $this->healthCheckInterval;
     }
 
-    public function setHealthCheckInterval(int $healthCheckInterval): self
+    public function setHealthCheckInterval(int $healthCheckInterval): void
     {
         $this->healthCheckInterval = $healthCheckInterval;
-        return $this;
     }
 
     public function getHealthCheckTimeout(): int
@@ -230,10 +293,9 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
         return $this->healthCheckTimeout;
     }
 
-    public function setHealthCheckTimeout(int $healthCheckTimeout): self
+    public function setHealthCheckTimeout(int $healthCheckTimeout): void
     {
         $this->healthCheckTimeout = $healthCheckTimeout;
-        return $this;
     }
 
     public function getHealthCheckRetries(): int
@@ -241,30 +303,8 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
         return $this->healthCheckRetries;
     }
 
-    public function setHealthCheckRetries(int $healthCheckRetries): self
+    public function setHealthCheckRetries(int $healthCheckRetries): void
     {
         $this->healthCheckRetries = $healthCheckRetries;
-        return $this;
     }
-
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setCreatedFromIp(?string $createdFromIp): self
-    {
-        $this->createdFromIp = $createdFromIp;
-        return $this;
-    }
-
-    public function getUpdatedFromIp(): ?string
-    {
-        return $this->updatedFromIp;
-    }
-
-    public function setUpdatedFromIp(?string $updatedFromIp): self
-    {
-        $this->updatedFromIp = $updatedFromIp;
-        return $this;
-    }}
+}

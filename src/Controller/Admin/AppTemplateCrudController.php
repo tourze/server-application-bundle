@@ -6,6 +6,8 @@ namespace ServerApplicationBundle\Controller\Admin;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
+use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminAction;
+use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminCrud;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FilterCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -17,6 +19,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\CodeEditorField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
@@ -31,13 +34,16 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 /**
  * 应用模板CRUD控制器
  */
-class AppTemplateCrudController extends AbstractCrudController
+#[AdminCrud(
+    routePath: '/server-application/app-template',
+    routeName: 'server_application_app_template'
+)]
+final class AppTemplateCrudController extends AbstractCrudController
 {
     public function __construct(
         private readonly AppTemplateService $appTemplateService,
         private readonly AdminUrlGenerator $adminUrlGenerator,
-    )
-    {
+    ) {
     }
 
     public static function getEntityFqcn(): string
@@ -52,48 +58,65 @@ class AppTemplateCrudController extends AbstractCrudController
             ->setEntityLabelInPlural('应用模板列表')
             ->setPageTitle('index', '应用模板管理')
             ->setPageTitle('new', '创建应用模板')
-            ->setPageTitle('edit', fn(AppTemplate $template) => sprintf('编辑应用模板 <strong>%s</strong>', $template->getName()))
-            ->setPageTitle('detail', fn(AppTemplate $template) => sprintf('应用模板 <strong>%s</strong> 详情', $template->getName()))
+            ->setPageTitle('edit', fn (AppTemplate $template) => sprintf('编辑应用模板 <strong>%s</strong>', $template->getName()))
+            ->setPageTitle('detail', fn (AppTemplate $template) => sprintf('应用模板 <strong>%s</strong> 详情', $template->getName()))
             ->setDefaultSort(['createTime' => 'DESC'])
             ->setSearchFields(['id', 'name', 'description', 'version'])
             ->setHelp('index', '应用模板是应用部署的基础配置，包含安装步骤、端口配置等信息')
-            ->setPaginatorPageSize(20);
+            ->setPaginatorPageSize(20)
+        ;
     }
 
     public function configureFields(string $pageName): iterable
     {
         yield IdField::new('id', 'ID')
             ->setMaxLength(9999)
-            ->hideOnForm();
+            ->hideOnForm()
+        ;
 
         yield TextField::new('name', '模板名称')
             ->setRequired(true)
-            ->setHelp('模板名称应简洁明了，反映应用类型');
+            ->setHelp('模板名称应简洁明了，反映应用类型')
+        ;
 
         yield TextareaField::new('description', '模板描述')
             ->setRequired(false)
             ->hideOnIndex()
-            ->setHelp('详细描述模板的用途和特性');
+            ->setHelp('详细描述模板的用途和特性')
+        ;
 
         yield TextField::new('version', '版本号')
             ->setRequired(true)
-            ->setHelp('使用语义化版本号，如1.0.0');
+            ->setHelp('使用语义化版本号，如1.0.0')
+        ;
 
         yield BooleanField::new('isLatest', '最新版本')
             ->renderAsSwitch(true)
-            ->setHelp('标记为该模板名称的最新版本');
+            ->setHelp('标记为该模板名称的最新版本')
+        ;
 
         yield BooleanField::new('enabled', '启用状态')
             ->renderAsSwitch(true)
-            ->setHelp('禁用的模板不能用于创建新实例');
+            ->setHelp('禁用的模板不能用于创建新实例')
+        ;
+
+        yield CodeEditorField::new('environmentVariables', '环境变量默认值')
+            ->hideOnIndex()
+            ->formatValue(function ($value) {
+                return is_array($value) ? json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : $value;
+            })
+            ->setHelp('以JSON格式配置环境变量的默认值')
+        ;
 
         yield DateTimeField::new('createTime', '创建时间')
             ->hideOnForm()
-            ->setFormat('yyyy-MM-dd HH:mm:ss');
+            ->setFormat('yyyy-MM-dd HH:mm:ss')
+        ;
 
         yield DateTimeField::new('updateTime', '更新时间')
             ->hideOnForm()
-            ->setFormat('yyyy-MM-dd HH:mm:ss');
+            ->setFormat('yyyy-MM-dd HH:mm:ss')
+        ;
     }
 
     public function configureFilters(Filters $filters): Filters
@@ -102,35 +125,39 @@ class AppTemplateCrudController extends AbstractCrudController
             ->add(TextFilter::new('name', '模板名称'))
             ->add(TextFilter::new('version', '版本号'))
             ->add(BooleanFilter::new('isLatest', '最新版本'))
-            ->add(BooleanFilter::new('enabled', '启用状态'));
+            ->add(BooleanFilter::new('enabled', '启用状态'))
+        ;
     }
 
     public function configureActions(Actions $actions): Actions
     {
         $setAsLatest = Action::new('setAsLatest', '设为最新版本')
-            ->linkToCrudAction('setAsLatestAction')
-            ->displayIf(fn(AppTemplate $entity) => !$entity->isLatest())
+            ->linkToCrudAction('markAsLatestAction')
+            ->displayIf(fn (AppTemplate $entity) => !$entity->isLatest())
             ->setCssClass('btn btn-primary')
-            ->setIcon('fa fa-check');
+            ->setIcon('fa fa-check')
+        ;
 
         $enable = Action::new('enable', '启用')
             ->linkToCrudAction('enableAction')
-            ->displayIf(fn(AppTemplate $entity) => !$entity->isEnabled())
+            ->displayIf(fn (AppTemplate $entity) => !$entity->isEnabled())
             ->setCssClass('btn btn-success')
-            ->setIcon('fa fa-play');
+            ->setIcon('fa fa-play')
+        ;
 
         $disable = Action::new('disable', '禁用')
             ->linkToCrudAction('disableAction')
-            ->displayIf(fn(AppTemplate $entity) => $entity->isEnabled())
+            ->displayIf(fn (AppTemplate $entity) => $entity->isEnabled())
             ->setCssClass('btn btn-warning')
-            ->setIcon('fa fa-pause');
+            ->setIcon('fa fa-pause')
+        ;
 
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
             ->add(Crud::PAGE_DETAIL, $setAsLatest)
             ->add(Crud::PAGE_DETAIL, $enable)
             ->add(Crud::PAGE_DETAIL, $disable)
-            ->reorder(Crud::PAGE_INDEX, [Action::DETAIL, Action::EDIT, Action::DELETE]);
+        ;
     }
 
     public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
@@ -139,16 +166,18 @@ class AppTemplateCrudController extends AbstractCrudController
 
         return $queryBuilder
             ->select('entity')
-            ->orderBy('entity.createTime', 'DESC');
+            ->orderBy('entity.createTime', 'DESC')
+        ;
     }
 
     /**
      * 设为最新版本
      */
-    public function setAsLatestAction(AdminContext $context): RedirectResponse
+    #[AdminAction(routePath: '{id}/mark-as-latest', routeName: 'markAsLatestAction')]
+    public function markAsLatestAction(AdminContext $context): RedirectResponse
     {
-        /** @var AppTemplate $template */
         $template = $context->getEntity()->getInstance();
+        assert($template instanceof AppTemplate);
 
         $this->appTemplateService->setAsLatestVersion($template);
 
@@ -165,10 +194,11 @@ class AppTemplateCrudController extends AbstractCrudController
     /**
      * 启用模板
      */
+    #[AdminAction(routePath: '{id}/enable', routeName: 'enableAction')]
     public function enableAction(AdminContext $context): RedirectResponse
     {
-        /** @var AppTemplate $template */
         $template = $context->getEntity()->getInstance();
+        assert($template instanceof AppTemplate);
 
         $this->appTemplateService->enable($template);
 
@@ -185,10 +215,11 @@ class AppTemplateCrudController extends AbstractCrudController
     /**
      * 禁用模板
      */
+    #[AdminAction(routePath: '{id}/disable', routeName: 'disableAction')]
     public function disableAction(AdminContext $context): RedirectResponse
     {
-        /** @var AppTemplate $template */
         $template = $context->getEntity()->getInstance();
+        assert($template instanceof AppTemplate);
 
         $this->appTemplateService->disable($template);
 
@@ -203,10 +234,12 @@ class AppTemplateCrudController extends AbstractCrudController
     }
 
     /**
-     * 保存前处理JSON字段
+     * 保存前处理字段
+     * @param object $entityInstance
      */
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
+        assert(is_object($entityInstance));
         parent::persistEntity($entityManager, $entityInstance);
     }
 }

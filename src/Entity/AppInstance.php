@@ -10,82 +10,104 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use ServerApplicationBundle\Enum\AppStatus;
 use ServerApplicationBundle\Repository\AppInstanceRepository;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\Arrayable\AdminArrayInterface;
 use Tourze\Arrayable\ApiArrayInterface;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
+use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
+use Tourze\DoctrineIpBundle\Traits\IpTraceableAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 
 /**
  * 应用实例
+ *
+ * @implements AdminArrayInterface<string, mixed>
+ * @implements ApiArrayInterface<string, mixed>
  */
 #[ORM\Entity(repositoryClass: AppInstanceRepository::class)]
 #[ORM\Table(name: 'ims_server_app_instance', options: ['comment' => '应用实例'])]
-#[ORM\Index(name: 'ims_server_app_instance_idx_template', columns: ['template_id'])]
-#[ORM\Index(name: 'ims_server_app_instance_idx_node', columns: ['node_id'])]
-#[ORM\Index(name: 'ims_server_app_instance_idx_status', columns: ['status'])]
 class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
 {
     use TimestampableAware;
     use BlameableAware;
+    use IpTraceableAware;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '唯一标识符'])]
     private ?int $id = null;
 
+    #[ORM\Column(name: 'template_id', type: Types::INTEGER, options: ['comment' => '应用模板ID'])]
+    #[IndexColumn]
+    #[Assert\NotNull]
+    #[Assert\PositiveOrZero]
+    private int $templateId;
+
     /**
      * 关联的应用模板
      */
-    #[ORM\ManyToOne(targetEntity: AppTemplate::class)]
+    #[ORM\ManyToOne(targetEntity: AppTemplate::class, cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'template_id', referencedColumnName: 'id', nullable: false)]
     private AppTemplate $template;
 
     #[ORM\Column(type: Types::STRING, length: 20, options: ['comment' => '应用时的模板版本号'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 20)]
     private string $templateVersion;
 
     #[ORM\Column(type: Types::STRING, length: 20, options: ['comment' => '部署的服务器节点ID'])]
+    #[IndexColumn]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 20)]
     private string $nodeId;
 
     #[ORM\Column(type: Types::STRING, length: 100, options: ['comment' => '实例名称'])]
     #[TrackColumn]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 100)]
     private string $name;
 
     #[ORM\Column(type: Types::STRING, enumType: AppStatus::class, options: ['comment' => '状态(INSTALLING/RUNNING/FAILED/UNINSTALLING/STOPPED)'])]
+    #[IndexColumn]
     #[TrackColumn]
+    #[Assert\NotBlank]
+    #[Assert\Choice(callback: [AppStatus::class, 'cases'])]
     private AppStatus $status;
 
+    /**
+     * @var array<string, mixed>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true, options: ['comment' => '环境变量'])]
     #[TrackColumn]
+    #[Assert\Type(type: 'array')]
     private ?array $environmentVariables = [];
 
     /**
      * 端口映射
+     *
+     * @var Collection<int, AppPortMapping>
      */
     #[ORM\OneToMany(targetEntity: AppPortMapping::class, mappedBy: 'instance', fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     private Collection $portMappings;
 
     /**
      * 生命周期日志
+     *
+     * @var Collection<int, AppLifecycleLog>
      */
     #[ORM\OneToMany(targetEntity: AppLifecycleLog::class, mappedBy: 'instance', fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     #[ORM\OrderBy(value: ['createTime' => 'DESC'])]
     private Collection $lifecycleLogs;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '是否健康', 'default' => false])]
+    #[Assert\NotNull]
+    #[Assert\Type(type: 'bool')]
     private bool $healthy = false;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['comment' => '上次健康检测时间'])]
+    #[Assert\Type(type: \DateTimeInterface::class)]
     private ?\DateTimeInterface $lastHealthCheck = null;
-
-    #[CreateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
-    private ?string $createdFromIp = null;
-
-    #[UpdateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '更新IP'])]
-    private ?string $updatedFromIp = null;
 
     public function __construct()
     {
@@ -100,6 +122,8 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
 
     /**
      * 转为管理后台数组
+     *
+     * @return array<string, mixed>
      */
     public function toAdminArray(): array
     {
@@ -122,6 +146,8 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
 
     /**
      * 检索管理后台数组
+     *
+     * @return array<string, mixed>
      */
     public function retrieveAdminArray(): array
     {
@@ -130,6 +156,8 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
 
     /**
      * 转为API数组
+     *
+     * @return array<string, mixed>
      */
     public function toApiArray(): array
     {
@@ -151,6 +179,8 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
 
     /**
      * 检索API数组
+     *
+     * @return array<string, mixed>
      */
     public function retrieveApiArray(): array
     {
@@ -162,15 +192,29 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->id;
     }
 
+    public function getTemplateId(): int
+    {
+        return $this->templateId;
+    }
+
+    public function setTemplateId(int $templateId): void
+    {
+        $this->templateId = $templateId;
+    }
+
     public function getTemplate(): AppTemplate
     {
         return $this->template;
     }
 
-    public function setTemplate(AppTemplate $template): self
+    public function setTemplate(AppTemplate $template): void
     {
         $this->template = $template;
-        return $this;
+        // 同步更新外键ID
+        $templateId = $template->getId();
+        if (null !== $templateId) {
+            $this->templateId = $templateId;
+        }
     }
 
     public function getTemplateVersion(): string
@@ -178,10 +222,9 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->templateVersion;
     }
 
-    public function setTemplateVersion(string $templateVersion): self
+    public function setTemplateVersion(string $templateVersion): void
     {
         $this->templateVersion = $templateVersion;
-        return $this;
     }
 
     public function getNodeId(): string
@@ -189,10 +232,9 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->nodeId;
     }
 
-    public function setNodeId(string $nodeId): self
+    public function setNodeId(string $nodeId): void
     {
         $this->nodeId = $nodeId;
-        return $this;
     }
 
     public function getName(): string
@@ -200,10 +242,9 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->name;
     }
 
-    public function setName(string $name): self
+    public function setName(string $name): void
     {
         $this->name = $name;
-        return $this;
     }
 
     public function getStatus(): AppStatus
@@ -216,15 +257,53 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
         $this->status = $status;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getEnvironmentVariables(): ?array
     {
         return $this->environmentVariables;
     }
 
-    public function setEnvironmentVariables(?array $environmentVariables): self
+    /**
+     * @param array<string, mixed>|string|null $environmentVariables
+     */
+    public function setEnvironmentVariables($environmentVariables): void
     {
-        $this->environmentVariables = $environmentVariables;
-        return $this;
+        // 处理来自 CodeEditorField 的 JSON 字符串
+        if (is_string($environmentVariables)) {
+            $this->environmentVariables = $this->parseJsonEnvironmentVariables($environmentVariables);
+        } else {
+            $this->environmentVariables = $environmentVariables;
+        }
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function parseJsonEnvironmentVariables(string $json): ?array
+    {
+        if ('' === trim($json)) {
+            return [];
+        }
+
+        try {
+            $decodedVars = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+            // 确保 json_decode 返回的是数组或null,否则设为空数组
+            if (is_array($decodedVars)) {
+                /** @var array<string, mixed> $validVars */
+                $validVars = $decodedVars;
+
+                return $validVars;
+            }
+            if (null === $decodedVars) {
+                return null;
+            }
+
+            return [];
+        } catch (\JsonException $e) {
+            return [];
+        }
     }
 
     /**
@@ -235,17 +314,15 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->portMappings;
     }
 
-    public function addPortMapping(AppPortMapping $portMapping): self
+    public function addPortMapping(AppPortMapping $portMapping): void
     {
         if (!$this->portMappings->contains($portMapping)) {
             $this->portMappings->add($portMapping);
             $portMapping->setInstance($this);
         }
-
-        return $this;
     }
 
-    public function removePortMapping(AppPortMapping $portMapping): self
+    public function removePortMapping(AppPortMapping $portMapping): void
     {
         if ($this->portMappings->removeElement($portMapping)) {
             // set the owning side to null (unless already changed)
@@ -253,8 +330,6 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
                 $portMapping->setInstance(null);
             }
         }
-
-        return $this;
     }
 
     /**
@@ -265,17 +340,15 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->lifecycleLogs;
     }
 
-    public function addLifecycleLog(AppLifecycleLog $lifecycleLog): self
+    public function addLifecycleLog(AppLifecycleLog $lifecycleLog): void
     {
         if (!$this->lifecycleLogs->contains($lifecycleLog)) {
             $this->lifecycleLogs->add($lifecycleLog);
             $lifecycleLog->setInstance($this);
         }
-
-        return $this;
     }
 
-    public function removeLifecycleLog(AppLifecycleLog $lifecycleLog): self
+    public function removeLifecycleLog(AppLifecycleLog $lifecycleLog): void
     {
         if ($this->lifecycleLogs->removeElement($lifecycleLog)) {
             // set the owning side to null (unless already changed)
@@ -283,8 +356,6 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
                 $lifecycleLog->setInstance(null);
             }
         }
-
-        return $this;
     }
 
     public function isHealthy(): bool
@@ -292,10 +363,9 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->healthy;
     }
 
-    public function setHealthy(bool $healthy): self
+    public function setHealthy(bool $healthy): void
     {
         $this->healthy = $healthy;
-        return $this;
     }
 
     public function getLastHealthCheck(): ?\DateTimeInterface
@@ -303,31 +373,8 @@ class AppInstance implements \Stringable, AdminArrayInterface, ApiArrayInterface
         return $this->lastHealthCheck;
     }
 
-    public function setLastHealthCheck(?\DateTimeInterface $lastHealthCheck): self
+    public function setLastHealthCheck(?\DateTimeInterface $lastHealthCheck): void
     {
         $this->lastHealthCheck = $lastHealthCheck;
-        return $this;
-    }
-
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setCreatedFromIp(?string $createdFromIp): self
-    {
-        $this->createdFromIp = $createdFromIp;
-        return $this;
-    }
-
-    public function getUpdatedFromIp(): ?string
-    {
-        return $this->updatedFromIp;
-    }
-
-    public function setUpdatedFromIp(?string $updatedFromIp): self
-    {
-        $this->updatedFromIp = $updatedFromIp;
-        return $this;
     }
 }

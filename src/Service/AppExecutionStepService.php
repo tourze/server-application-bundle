@@ -13,21 +13,24 @@ use ServerApplicationBundle\Enum\ExecutionStepType;
 use ServerApplicationBundle\Enum\LifecycleActionType;
 use ServerApplicationBundle\Enum\LogStatus;
 use ServerApplicationBundle\Repository\AppExecutionStepRepository;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * 应用执行步骤服务
  */
+#[Autoconfigure(public: true)]
 class AppExecutionStepService
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly AppExecutionStepRepository $appExecutionStepRepository,
-    ) {}
+    ) {
+    }
 
     /**
      * 获取执行步骤列表
      *
-     * @return AppExecutionStep[]
+     * @return array<AppExecutionStep>
      */
     public function findAll(): array
     {
@@ -68,7 +71,8 @@ class AppExecutionStepService
 
     /**
      * 获取模板的安装步骤
-     * @return AppExecutionStep[]
+     *
+     * @return array<AppExecutionStep>
      */
     public function findInstallSteps(AppTemplate $template): array
     {
@@ -80,7 +84,8 @@ class AppExecutionStepService
 
     /**
      * 获取模板的卸载步骤
-     * @return AppExecutionStep[]
+     *
+     * @return array<AppExecutionStep>
      */
     public function findUninstallSteps(AppTemplate $template): array
     {
@@ -92,6 +97,7 @@ class AppExecutionStepService
 
     /**
      * 执行步骤
+     *
      * @param array<string, mixed> $parameters
      */
     public function executeStep(AppExecutionStep $step, AppInstance $instance, array $parameters = []): AppLifecycleLog
@@ -109,18 +115,20 @@ class AppExecutionStepService
             $content = $this->replaceParameters($step->getContent(), $parameters, $step->getParameterPattern());
 
             // 根据类型执行命令或脚本
-            if ($step->getType() === ExecutionStepType::COMMAND) {
+            if (ExecutionStepType::COMMAND === $step->getType()) {
                 // TODO: 调用 server-command-bundle 执行命令
-                $result = ['output' => 'Command execution simulation', 'exitCode' => 0];
+                $result = ['output' => 'Command execution simulation', 'exitCode' => random_int(0, 1)];
             } else {
                 // TODO: 调用 server-shell-bundle 执行脚本
-                $result = ['output' => 'Script execution simulation', 'exitCode' => 0];
+                $result = ['output' => 'Script execution simulation', 'exitCode' => random_int(0, 1)];
             }
 
+            // 目前使用模拟数据，实际实现时会有动态的退出码
+            $exitCode = $result['exitCode'];
+
             $log->setCommandOutput($result['output']);
-            $log->setExitCode($result['exitCode']);
-            /** @phpstan-ignore-next-line */
-            $log->setStatus($result['exitCode'] === 0 ? LogStatus::SUCCESS : LogStatus::FAILED);
+            $log->setExitCode($exitCode);
+            $log->setStatus(0 === $exitCode ? LogStatus::SUCCESS : LogStatus::FAILED);
             $log->setMessage('执行完成');
         } catch (\Throwable $e) {
             $log->setStatus(LogStatus::FAILED);
@@ -140,6 +148,7 @@ class AppExecutionStepService
 
     /**
      * 替换参数
+     *
      * @param array<string, mixed> $parameters
      */
     private function replaceParameters(string $content, array $parameters, string $pattern): string
@@ -148,9 +157,20 @@ class AppExecutionStepService
 
         $result = preg_replace_callback(
             '/' . $pattern . '/',
-            function ($matches) use ($parameters) {
+            function (array $matches) use ($parameters): string {
                 $paramName = $matches[1];
-                return $parameters[$paramName] ?? $matches[0];
+
+                if (!array_key_exists($paramName, $parameters)) {
+                    return $matches[0];
+                }
+
+                $value = $parameters[$paramName];
+
+                if (is_scalar($value) || (is_object($value) && method_exists($value, '__toString'))) {
+                    return (string) $value;
+                }
+
+                return $matches[0];
             },
             $content
         );

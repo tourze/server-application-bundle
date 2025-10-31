@@ -10,10 +10,13 @@ use Doctrine\Persistence\ObjectManager;
 use ServerApplicationBundle\Entity\AppInstance;
 use ServerApplicationBundle\Entity\AppPortConfiguration;
 use ServerApplicationBundle\Entity\AppPortMapping;
+use Symfony\Component\DependencyInjection\Attribute\When;
 
 /**
  * 应用端口映射数据填充
  */
+#[When(env: 'test')]
+#[When(env: 'dev')]
 class AppPortMappingFixtures extends Fixture implements DependentFixtureInterface
 {
     public function load(ObjectManager $manager): void
@@ -24,7 +27,7 @@ class AppPortMappingFixtures extends Fixture implements DependentFixtureInterfac
         $webPortMapping->setConfiguration($this->getReference(AppPortConfigurationFixtures::WEB_HTTP_PORT_REFERENCE, AppPortConfiguration::class));
         $webPortMapping->setActualPort(30080);
         $webPortMapping->setHealthy(true);
-        $webPortMapping->setLastHealthCheck(new \DateTime());
+        $webPortMapping->setLastHealthCheck(new \DateTimeImmutable());
 
         $manager->persist($webPortMapping);
 
@@ -34,7 +37,7 @@ class AppPortMappingFixtures extends Fixture implements DependentFixtureInterfac
         $dbPortMapping->setConfiguration($this->getReference(AppPortConfigurationFixtures::DB_MYSQL_PORT_REFERENCE, AppPortConfiguration::class));
         $dbPortMapping->setActualPort(33306);
         $dbPortMapping->setHealthy(true);
-        $dbPortMapping->setLastHealthCheck(new \DateTime());
+        $dbPortMapping->setLastHealthCheck(new \DateTimeImmutable());
 
         $manager->persist($dbPortMapping);
 
@@ -44,7 +47,7 @@ class AppPortMappingFixtures extends Fixture implements DependentFixtureInterfac
         $apiPortMapping->setConfiguration($this->getReference(AppPortConfigurationFixtures::API_HTTP_PORT_REFERENCE, AppPortConfiguration::class));
         $apiPortMapping->setActualPort(30081);
         $apiPortMapping->setHealthy(false);
-        $apiPortMapping->setLastHealthCheck(new \DateTime());
+        $apiPortMapping->setLastHealthCheck(new \DateTimeImmutable());
 
         $manager->persist($apiPortMapping);
 

@@ -9,10 +9,12 @@ use ServerApplicationBundle\Entity\AppInstance;
 use ServerApplicationBundle\Entity\AppPortConfiguration;
 use ServerApplicationBundle\Entity\AppPortMapping;
 use ServerApplicationBundle\Repository\AppPortMappingRepository;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * 应用端口映射服务
  */
+#[Autoconfigure(public: true)]
 class AppPortMappingService
 {
     public function __construct(
@@ -24,6 +26,8 @@ class AppPortMappingService
 
     /**
      * 获取端口映射列表
+     *
+     * @return array<AppPortMapping>
      */
     public function findAll(): array
     {
@@ -64,6 +68,8 @@ class AppPortMappingService
 
     /**
      * 获取实例的所有端口映射
+     *
+     * @return array<AppPortMapping>
      */
     public function findByInstance(AppInstance $instance): array
     {
@@ -88,6 +94,8 @@ class AppPortMappingService
 
     /**
      * 为实例创建所有端口映射
+     *
+     * @return array<AppPortMapping>
      */
     public function createAllPortMappings(AppInstance $instance): array
     {
@@ -117,7 +125,7 @@ class AppPortMappingService
         );
 
         $portMapping->setHealthy($healthy);
-        $portMapping->setLastHealthCheck(new \DateTime());
+        $portMapping->setLastHealthCheck(new \DateTimeImmutable());
         $this->save($portMapping);
 
         return $healthy;

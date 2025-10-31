@@ -4,155 +4,158 @@ declare(strict_types=1);
 
 namespace ServerApplicationBundle\Tests\Entity;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use ServerApplicationBundle\Entity\AppPortConfiguration;
 use ServerApplicationBundle\Entity\AppTemplate;
 use ServerApplicationBundle\Enum\HealthCheckType;
 use ServerApplicationBundle\Enum\ProtocolType;
+use Tourze\Arrayable\AdminArrayInterface;
+use Tourze\Arrayable\ApiArrayInterface;
+use Tourze\PHPUnitDoctrineEntity\AbstractEntityTestCase;
 
 /**
  * AppPortConfiguration实体测试
+ *
+ * @internal
  */
-class AppPortConfigurationTest extends TestCase
+#[CoversClass(AppPortConfiguration::class)]
+final class AppPortConfigurationTest extends AbstractEntityTestCase
 {
     private AppPortConfiguration $appPortConfiguration;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->appPortConfiguration = new AppPortConfiguration();
+
+        $this->appPortConfiguration = $this->createEntity();
     }
 
-    public function test_setTemplate_withValidTemplate_setsTemplateCorrectly(): void
+    public function testSetTemplateWithValidTemplateSetsTemplateCorrectly(): void
     {
+        // 注意：使用具体实体类 AppTemplate 的 Mock 对象用于测试实体关联关系
+        // 原因：测试需要验证实体间的关联设置，实体类没有对应的接口抽象
+        // 替代方案：创建真实对象会增加测试复杂度和依赖，Mock 是最佳选择
         $template = $this->createMock(AppTemplate::class);
-        
-        $result = $this->appPortConfiguration->setTemplate($template);
-        
-        $this->assertSame($this->appPortConfiguration, $result);
+
+        $this->appPortConfiguration->setTemplate($template);
         $this->assertSame($template, $this->appPortConfiguration->getTemplate());
     }
 
-    public function test_setPort_withValidInteger_setsPortCorrectly(): void
+    public function testSetPortWithValidIntegerSetsPortCorrectly(): void
     {
         $port = 8080;
-        
-        $result = $this->appPortConfiguration->setPort($port);
-        
-        $this->assertSame($this->appPortConfiguration, $result);
+
+        $this->appPortConfiguration->setPort($port);
+
         $this->assertEquals($port, $this->appPortConfiguration->getPort());
     }
 
-    public function test_setProtocol_withValidEnum_setsProtocolCorrectly(): void
+    public function testSetProtocolWithValidEnumSetsProtocolCorrectly(): void
     {
         $protocol = ProtocolType::TCP;
-        
-        $result = $this->appPortConfiguration->setProtocol($protocol);
-        
-        $this->assertSame($this->appPortConfiguration, $result);
+
+        $this->appPortConfiguration->setProtocol($protocol);
+
         $this->assertEquals($protocol, $this->appPortConfiguration->getProtocol());
     }
 
-    public function test_setDescription_withValidString_setsDescriptionCorrectly(): void
+    public function testSetDescriptionWithValidStringSetsDescriptionCorrectly(): void
     {
         $description = 'HTTP server port';
-        
-        $result = $this->appPortConfiguration->setDescription($description);
-        
-        $this->assertSame($this->appPortConfiguration, $result);
+
+        $this->appPortConfiguration->setDescription($description);
+
         $this->assertEquals($description, $this->appPortConfiguration->getDescription());
     }
 
-    public function test_setDescription_withNull_setsDescriptionToNull(): void
+    public function testSetDescriptionWithNullSetsDescriptionToNull(): void
     {
-        $result = $this->appPortConfiguration->setDescription(null);
-        
-        $this->assertSame($this->appPortConfiguration, $result);
+        $this->appPortConfiguration->setDescription(null);
+
         $this->assertNull($this->appPortConfiguration->getDescription());
     }
 
-    public function test_setHealthCheckType_withValidEnum_setsHealthCheckTypeCorrectly(): void
+    public function testSetHealthCheckTypeWithValidEnumSetsHealthCheckTypeCorrectly(): void
     {
         $healthCheckType = HealthCheckType::TCP_CONNECT;
-        
-        $result = $this->appPortConfiguration->setHealthCheckType($healthCheckType);
-        
-        $this->assertSame($this->appPortConfiguration, $result);
+
+        $this->appPortConfiguration->setHealthCheckType($healthCheckType);
+
         $this->assertEquals($healthCheckType, $this->appPortConfiguration->getHealthCheckType());
     }
 
-    public function test_setHealthCheckConfig_withArray_setsHealthCheckConfigCorrectly(): void
+    public function testSetHealthCheckConfigWithArraySetsHealthCheckConfigCorrectly(): void
     {
         $config = ['timeout' => 5, 'retries' => 3];
-        
-        $result = $this->appPortConfiguration->setHealthCheckConfig($config);
-        
-        $this->assertSame($this->appPortConfiguration, $result);
+
+        $this->appPortConfiguration->setHealthCheckConfig($config);
+
         $this->assertEquals($config, $this->appPortConfiguration->getHealthCheckConfig());
     }
 
-    public function test_setHealthCheckConfig_withNull_setsHealthCheckConfigToNull(): void
+    public function testSetHealthCheckConfigWithNullSetsHealthCheckConfigToNull(): void
     {
-        $result = $this->appPortConfiguration->setHealthCheckConfig(null);
-        
-        $this->assertSame($this->appPortConfiguration, $result);
+        $this->appPortConfiguration->setHealthCheckConfig(null);
+
         $this->assertNull($this->appPortConfiguration->getHealthCheckConfig());
     }
 
-    public function test_setHealthCheckInterval_withValidInteger_setsHealthCheckIntervalCorrectly(): void
+    public function testSetHealthCheckIntervalWithValidIntegerSetsHealthCheckIntervalCorrectly(): void
     {
         $interval = 60;
-        
-        $result = $this->appPortConfiguration->setHealthCheckInterval($interval);
-        
-        $this->assertSame($this->appPortConfiguration, $result);
+
+        $this->appPortConfiguration->setHealthCheckInterval($interval);
+
         $this->assertEquals($interval, $this->appPortConfiguration->getHealthCheckInterval());
     }
 
-    public function test_setHealthCheckTimeout_withValidInteger_setsHealthCheckTimeoutCorrectly(): void
+    public function testSetHealthCheckTimeoutWithValidIntegerSetsHealthCheckTimeoutCorrectly(): void
     {
         $timeout = 10;
-        
-        $result = $this->appPortConfiguration->setHealthCheckTimeout($timeout);
-        
-        $this->assertSame($this->appPortConfiguration, $result);
+
+        $this->appPortConfiguration->setHealthCheckTimeout($timeout);
+
         $this->assertEquals($timeout, $this->appPortConfiguration->getHealthCheckTimeout());
     }
 
-    public function test_setHealthCheckRetries_withValidInteger_setsHealthCheckRetriesCorrectly(): void
+    public function testSetHealthCheckRetriesWithValidIntegerSetsHealthCheckRetriesCorrectly(): void
     {
         $retries = 3;
-        
-        $result = $this->appPortConfiguration->setHealthCheckRetries($retries);
-        
-        $this->assertSame($this->appPortConfiguration, $result);
+
+        $this->appPortConfiguration->setHealthCheckRetries($retries);
+
         $this->assertEquals($retries, $this->appPortConfiguration->getHealthCheckRetries());
     }
 
-    public function test_toString_withPortAndProtocol_returnsCorrectFormat(): void
+    public function testToStringWithPortAndProtocolReturnsCorrectFormat(): void
     {
         $this->appPortConfiguration->setPort(8080);
         $this->appPortConfiguration->setProtocol(ProtocolType::TCP);
-        
+
         $this->assertEquals('tcp/8080', (string) $this->appPortConfiguration);
     }
 
-    public function test_toString_withPortProtocolAndDescription_returnsCorrectFormat(): void
+    public function testToStringWithPortProtocolAndDescriptionReturnsCorrectFormat(): void
     {
         $this->appPortConfiguration->setPort(443);
         $this->appPortConfiguration->setProtocol(ProtocolType::TCP);
         $this->appPortConfiguration->setDescription('HTTPS');
-        
+
         $this->assertEquals('tcp/443 (HTTPS)', (string) $this->appPortConfiguration);
     }
 
-    public function test_toAdminArray_withCompleteData_returnsCorrectArray(): void
+    public function testToAdminArrayWithCompleteDataReturnsCorrectArray(): void
     {
+        // 注意：使用具体实体类 AppTemplate 的 Mock 对象用于测试实体关联关系
+        // 原因：测试需要验证实体间的关联设置，实体类没有对应的接口抽象
+        // 替代方案：创建真实对象会增加测试复杂度和依赖，Mock 是最佳选择
         $template = $this->createMock(AppTemplate::class);
         $template->expects($this->once())
             ->method('getId')
-            ->willReturn(1);
-        
+            ->willReturn(1)
+        ;
+
         $this->appPortConfiguration->setTemplate($template);
         $this->appPortConfiguration->setPort(8080);
         $this->appPortConfiguration->setProtocol(ProtocolType::TCP);
@@ -162,16 +165,16 @@ class AppPortConfigurationTest extends TestCase
         $this->appPortConfiguration->setHealthCheckInterval(60);
         $this->appPortConfiguration->setHealthCheckTimeout(10);
         $this->appPortConfiguration->setHealthCheckRetries(3);
-        
+
         $createTime = new \DateTimeImmutable('2023-01-01 12:00:00');
         $updateTime = new \DateTimeImmutable('2023-01-02 12:00:00');
         $this->appPortConfiguration->setCreateTime($createTime);
         $this->appPortConfiguration->setUpdateTime($updateTime);
         $this->appPortConfiguration->setCreatedBy('test_user');
         $this->appPortConfiguration->setUpdatedBy('test_user2');
-        
+
         $result = $this->appPortConfiguration->toAdminArray();
-        
+
         $this->assertEquals(1, $result['template']);
         $this->assertEquals(8080, $result['port']);
         $this->assertEquals('tcp', $result['protocol']);
@@ -187,13 +190,17 @@ class AppPortConfigurationTest extends TestCase
         $this->assertEquals('test_user2', $result['updatedBy']);
     }
 
-    public function test_retrieveAdminArray_callsToAdminArray(): void
+    public function testRetrieveAdminArrayCallsToAdminArray(): void
     {
+        // 注意：使用具体实体类 AppTemplate 的 Mock 对象用于测试实体关联关系
+        // 原因：测试需要验证实体间的关联设置，实体类没有对应的接口抽象
+        // 替代方案：创建真实对象会增加测试复杂度和依赖，Mock 是最佳选择
         $template = $this->createMock(AppTemplate::class);
-        $template->expects($this->exactly(2))
+        $template->expects($this->exactly(1))
             ->method('getId')
-            ->willReturn(1);
-        
+            ->willReturn(1)
+        ;
+
         $this->appPortConfiguration->setTemplate($template);
         $this->appPortConfiguration->setPort(8080);
         $this->appPortConfiguration->setProtocol(ProtocolType::TCP);
@@ -201,14 +208,14 @@ class AppPortConfigurationTest extends TestCase
         $this->appPortConfiguration->setHealthCheckInterval(60);
         $this->appPortConfiguration->setHealthCheckTimeout(10);
         $this->appPortConfiguration->setHealthCheckRetries(3);
-        
+
         $adminArray = $this->appPortConfiguration->retrieveAdminArray();
         $toAdminArray = $this->appPortConfiguration->toAdminArray();
-        
+
         $this->assertEquals($toAdminArray, $adminArray);
     }
 
-    public function test_toApiArray_withCompleteData_returnsCorrectArray(): void
+    public function testToApiArrayWithCompleteDataReturnsCorrectArray(): void
     {
         $this->appPortConfiguration->setPort(9090);
         $this->appPortConfiguration->setProtocol(ProtocolType::UDP);
@@ -218,9 +225,9 @@ class AppPortConfigurationTest extends TestCase
         $this->appPortConfiguration->setHealthCheckInterval(120);
         $this->appPortConfiguration->setHealthCheckTimeout(15);
         $this->appPortConfiguration->setHealthCheckRetries(2);
-        
+
         $result = $this->appPortConfiguration->toApiArray();
-        
+
         $this->assertEquals(9090, $result['port']);
         $this->assertEquals('udp', $result['protocol']);
         $this->assertEquals('UDP service', $result['description']);
@@ -233,7 +240,7 @@ class AppPortConfigurationTest extends TestCase
         $this->assertArrayNotHasKey('createdBy', $result);
     }
 
-    public function test_retrieveApiArray_callsToApiArray(): void
+    public function testRetrieveApiArrayCallsToApiArray(): void
     {
         $this->appPortConfiguration->setPort(8080);
         $this->appPortConfiguration->setProtocol(ProtocolType::TCP);
@@ -241,53 +248,81 @@ class AppPortConfigurationTest extends TestCase
         $this->appPortConfiguration->setHealthCheckInterval(60);
         $this->appPortConfiguration->setHealthCheckTimeout(10);
         $this->appPortConfiguration->setHealthCheckRetries(3);
-        
+
         $apiArray = $this->appPortConfiguration->retrieveApiArray();
         $toApiArray = $this->appPortConfiguration->toApiArray();
-        
+
         $this->assertEquals($toApiArray, $apiArray);
     }
 
-    public function test_timeFields_withDateTime_setsCorrectly(): void
+    public function testTimeFieldsWithDateTimeSetsCorrectly(): void
     {
         $createTime = new \DateTimeImmutable('2023-01-01 12:00:00');
         $updateTime = new \DateTimeImmutable('2023-01-02 12:00:00');
-        
+
         $this->appPortConfiguration->setCreateTime($createTime);
         $this->appPortConfiguration->setUpdateTime($updateTime);
-        
+
         $this->assertEquals($createTime, $this->appPortConfiguration->getCreateTime());
         $this->assertEquals($updateTime, $this->appPortConfiguration->getUpdateTime());
     }
 
-    public function test_userFields_withStrings_setsCorrectly(): void
+    public function testUserFieldsWithStringsSetsCorrectly(): void
     {
         $createdBy = 'user1';
         $updatedBy = 'user2';
-        
+
         $this->appPortConfiguration->setCreatedBy($createdBy);
         $this->appPortConfiguration->setUpdatedBy($updatedBy);
-        
+
         $this->assertEquals($createdBy, $this->appPortConfiguration->getCreatedBy());
         $this->assertEquals($updatedBy, $this->appPortConfiguration->getUpdatedBy());
     }
 
-    public function test_ipFields_withValidIps_setsCorrectly(): void
+    public function testIpFieldsWithValidIpsSetsCorrectly(): void
     {
         $createdFromIp = '192.168.1.1';
         $updatedFromIp = '192.168.1.2';
-        
+
         $this->appPortConfiguration->setCreatedFromIp($createdFromIp);
         $this->appPortConfiguration->setUpdatedFromIp($updatedFromIp);
-        
+
         $this->assertEquals($createdFromIp, $this->appPortConfiguration->getCreatedFromIp());
         $this->assertEquals($updatedFromIp, $this->appPortConfiguration->getUpdatedFromIp());
     }
 
-    public function test_implementsExpectedInterfaces(): void
+    public function testImplementsExpectedInterfaces(): void
     {
         $this->assertInstanceOf(\Stringable::class, $this->appPortConfiguration);
-        $this->assertInstanceOf(\Tourze\Arrayable\AdminArrayInterface::class, $this->appPortConfiguration);
-        $this->assertInstanceOf(\Tourze\Arrayable\ApiArrayInterface::class, $this->appPortConfiguration);
+        $this->assertInstanceOf(AdminArrayInterface::class, $this->appPortConfiguration);
+        $this->assertInstanceOf(ApiArrayInterface::class, $this->appPortConfiguration);
     }
-} 
+
+    protected function createEntity(): AppPortConfiguration
+    {
+        return new AppPortConfiguration();
+    }
+
+    /**
+     * 提供属性及其样本值的 Data Provider。
+     *
+     * @return iterable<string, array{0: string, 1: mixed}>
+     */
+    public static function propertiesProvider(): iterable
+    {
+        yield 'port' => ['port', 8080];
+        yield 'protocol' => ['protocol', ProtocolType::TCP];
+        yield 'description' => ['description', 'HTTP server port'];
+        yield 'healthCheckType' => ['healthCheckType', HealthCheckType::TCP_CONNECT];
+        yield 'healthCheckConfig' => ['healthCheckConfig', ['timeout' => 5, 'retries' => 3]];
+        yield 'healthCheckInterval' => ['healthCheckInterval', 60];
+        yield 'healthCheckTimeout' => ['healthCheckTimeout', 10];
+        yield 'healthCheckRetries' => ['healthCheckRetries', 3];
+        yield 'createTime' => ['createTime', new \DateTimeImmutable()];
+        yield 'updateTime' => ['updateTime', new \DateTimeImmutable()];
+        yield 'createdBy' => ['createdBy', 'test_user'];
+        yield 'updatedBy' => ['updatedBy', 'test_user2'];
+        yield 'createdFromIp' => ['createdFromIp', '192.168.1.1'];
+        yield 'updatedFromIp' => ['updatedFromIp', '192.168.1.2'];
+    }
+}

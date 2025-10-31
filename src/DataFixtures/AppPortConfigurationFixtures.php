@@ -11,10 +11,13 @@ use ServerApplicationBundle\Entity\AppPortConfiguration;
 use ServerApplicationBundle\Entity\AppTemplate;
 use ServerApplicationBundle\Enum\HealthCheckType;
 use ServerApplicationBundle\Enum\ProtocolType;
+use Symfony\Component\DependencyInjection\Attribute\When;
 
 /**
  * 应用端口配置数据填充
  */
+#[When(env: 'test')]
+#[When(env: 'dev')]
 class AppPortConfigurationFixtures extends Fixture implements DependentFixtureInterface
 {
     // 使用常量定义引用名称

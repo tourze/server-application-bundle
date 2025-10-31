@@ -4,81 +4,112 @@ declare(strict_types=1);
 
 namespace ServerApplicationBundle\Tests\Enum;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ServerApplicationBundle\Enum\AppStatus;
+use Tourze\EnumExtra\Itemable;
+use Tourze\EnumExtra\Labelable;
+use Tourze\EnumExtra\Selectable;
+use Tourze\PHPUnitEnum\AbstractEnumTestCase;
 
 /**
  * AppStatus枚举测试类
- */
-class AppStatusTest extends TestCase
+ *
+ * @internal
+ * */
+#[CoversClass(AppStatus::class)]
+final class AppStatusTest extends AbstractEnumTestCase
 {
-    public function test_enumValues_containsAllExpectedValues(): void
+    public function testEnumValuesContainsAllExpectedValues(): void
     {
         $expectedValues = [
             'installing',
-            'running', 
+            'running',
             'failed',
             'uninstalling',
-            'stopped'
+            'stopped',
         ];
 
-        $actualValues = array_map(fn(AppStatus $status) => $status->value, AppStatus::cases());
+        $actualValues = array_map(fn (AppStatus $status) => $status->value, AppStatus::cases());
 
         $this->assertEquals($expectedValues, $actualValues);
     }
 
-    public function test_getLabel_installing_returnsCorrectChineseLabel(): void
+    public function testGetLabelInstallingReturnsCorrectChineseLabel(): void
     {
         $status = AppStatus::INSTALLING;
         $this->assertEquals('安装中', $status->getLabel());
     }
 
-    public function test_getLabel_running_returnsCorrectChineseLabel(): void
+    public function testGetLabelRunningReturnsCorrectChineseLabel(): void
     {
         $status = AppStatus::RUNNING;
         $this->assertEquals('运行中', $status->getLabel());
     }
 
-    public function test_getLabel_failed_returnsCorrectChineseLabel(): void
+    public function testGetLabelFailedReturnsCorrectChineseLabel(): void
     {
         $status = AppStatus::FAILED;
         $this->assertEquals('失败', $status->getLabel());
     }
 
-    public function test_getLabel_uninstalling_returnsCorrectChineseLabel(): void
+    public function testGetLabelUninstallingReturnsCorrectChineseLabel(): void
     {
         $status = AppStatus::UNINSTALLING;
         $this->assertEquals('卸载中', $status->getLabel());
     }
 
-    public function test_getLabel_stopped_returnsCorrectChineseLabel(): void
+    public function testGetLabelStoppedReturnsCorrectChineseLabel(): void
     {
         $status = AppStatus::STOPPED;
         $this->assertEquals('已停止', $status->getLabel());
     }
 
-    public function test_enumCount_returnsCorrectNumber(): void
+    public function testEnumCountReturnsCorrectNumber(): void
     {
         $this->assertCount(5, AppStatus::cases());
     }
 
-    public function test_enumImplementsExpectedInterfaces(): void
+    public function testEnumImplementsExpectedInterfaces(): void
     {
         $status = AppStatus::INSTALLING;
-        
-        $this->assertInstanceOf(\Tourze\EnumExtra\Labelable::class, $status);
-        $this->assertInstanceOf(\Tourze\EnumExtra\Itemable::class, $status);
-        $this->assertInstanceOf(\Tourze\EnumExtra\Selectable::class, $status);
+
+        $this->assertInstanceOf(Labelable::class, $status);
+        $this->assertInstanceOf(Itemable::class, $status);
+        $this->assertInstanceOf(Selectable::class, $status);
     }
 
     /**
      * 测试每个枚举值都有对应的标签
      */
-    public function test_allEnumValues_haveLabels(): void
+    public function testAllEnumValuesHaveLabels(): void
     {
         foreach (AppStatus::cases() as $status) {
             $label = $status->getLabel();
             $this->assertNotEmpty($label);
         }
     }
-} 
+
+    public function testToSelectItemReturnsCorrectFormat(): void
+    {
+        $status = AppStatus::INSTALLING;
+        $selectItem = $status->toSelectItem();
+
+        $this->assertIsArray($selectItem);
+        $this->assertArrayHasKey('value', $selectItem);
+        $this->assertArrayHasKey('label', $selectItem);
+        $this->assertEquals('installing', $selectItem['value']);
+        $this->assertEquals('安装中', $selectItem['label']);
+    }
+
+    public function testToArrayReturnsCorrectFormat(): void
+    {
+        $status = AppStatus::INSTALLING;
+        $array = $status->toArray();
+
+        $this->assertIsArray($array);
+        $this->assertArrayHasKey('value', $array);
+        $this->assertArrayHasKey('label', $array);
+        $this->assertEquals('installing', $array['value']);
+        $this->assertEquals('安装中', $array['label']);
+    }
+}

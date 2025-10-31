@@ -7,10 +7,12 @@ namespace ServerApplicationBundle\Service;
 use Doctrine\ORM\EntityManagerInterface;
 use ServerApplicationBundle\Entity\AppTemplate;
 use ServerApplicationBundle\Repository\AppTemplateRepository;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * 应用模板服务
  */
+#[Autoconfigure(public: true)]
 class AppTemplateService
 {
     public function __construct(
@@ -21,6 +23,8 @@ class AppTemplateService
 
     /**
      * 获取应用模板列表
+     *
+     * @return array<AppTemplate>
      */
     public function findAll(): array
     {
@@ -41,7 +45,7 @@ class AppTemplateService
     public function save(AppTemplate $appTemplate, bool $flush = true): void
     {
         $this->entityManager->persist($appTemplate);
-        
+
         if ($flush) {
             $this->entityManager->flush();
         }
@@ -53,7 +57,7 @@ class AppTemplateService
     public function remove(AppTemplate $appTemplate, bool $flush = true): void
     {
         $this->entityManager->remove($appTemplate);
-        
+
         if ($flush) {
             $this->entityManager->flush();
         }
@@ -61,6 +65,8 @@ class AppTemplateService
 
     /**
      * 查找最新版本的模板
+     *
+     * @return array<AppTemplate>
      */
     public function findLatestVersions(): array
     {
@@ -91,15 +97,16 @@ class AppTemplateService
     public function setAsLatestVersion(AppTemplate $appTemplate): void
     {
         // 先将所有同名模板的isLatest设为false
-        $queryBuilder = $this->entityManager->createQueryBuilder();
-        $queryBuilder->update(AppTemplate::class, 't')
+        $queryBuilder = $this->appTemplateRepository->createQueryBuilder('t');
+        $queryBuilder->update()
             ->set('t.isLatest', 'false')
             ->where('t.name = :name')
             ->andWhere('t.id != :id')
             ->setParameter('name', $appTemplate->getName())
             ->setParameter('id', $appTemplate->getId())
             ->getQuery()
-            ->execute();
+            ->execute()
+        ;
 
         // 将当前模板设为最新版
         $appTemplate->setIsLatest(true);

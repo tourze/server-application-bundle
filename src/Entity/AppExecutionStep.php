@@ -8,66 +8,89 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use ServerApplicationBundle\Enum\ExecutionStepType;
 use ServerApplicationBundle\Repository\AppExecutionStepRepository;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\Arrayable\AdminArrayInterface;
 use Tourze\Arrayable\ApiArrayInterface;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
+use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
+use Tourze\DoctrineIpBundle\Traits\IpTraceableAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 
 /**
  * 应用执行步骤
+ *
+ * @implements AdminArrayInterface<string, mixed>
+ * @implements ApiArrayInterface<string, mixed>
  */
 #[ORM\Entity(repositoryClass: AppExecutionStepRepository::class)]
 #[ORM\Table(name: 'ims_server_app_execution_step', options: ['comment' => '应用执行步骤'])]
-#[ORM\Index(name: 'ims_server_app_execution_step_idx_template', columns: ['template_id'])]
-#[ORM\Index(name: 'ims_server_app_execution_step_idx_sequence', columns: ['sequence'])]
 class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInterface
 {
     use TimestampableAware;
     use BlameableAware;
+    use IpTraceableAware;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '唯一标识符'])]
     private ?int $id = null;
 
+    #[ORM\Column(name: 'template_id', type: Types::INTEGER, options: ['comment' => '应用模板ID'])]
+    #[IndexColumn]
+    #[Assert\NotNull]
+    #[Assert\PositiveOrZero]
+    private int $templateId;
+
     /**
      * 所属应用模板
      */
-    #[ORM\ManyToOne(targetEntity: AppTemplate::class, inversedBy: 'installSteps')]
+    #[ORM\ManyToOne(targetEntity: AppTemplate::class, inversedBy: 'installSteps', cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'template_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
-    private AppTemplate $template;
+    private ?AppTemplate $template = null;
 
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '执行顺序'])]
+    #[IndexColumn]
+    #[Assert\NotBlank]
+    #[Assert\PositiveOrZero]
     private int $sequence;
 
     #[ORM\Column(type: Types::STRING, length: 100, options: ['comment' => '步骤名称'])]
     #[TrackColumn]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 100)]
     private string $name;
 
     #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '步骤描述'])]
     #[TrackColumn]
+    #[Assert\Length(max: 65535)]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::STRING, enumType: ExecutionStepType::class, options: ['comment' => '步骤类型(COMMAND/SCRIPT)'])]
     #[TrackColumn]
+    #[Assert\NotBlank]
+    #[Assert\Choice(callback: [ExecutionStepType::class, 'cases'])]
     private ExecutionStepType $type;
 
     #[ORM\Column(type: Types::TEXT, options: ['comment' => '命令内容或脚本内容'])]
     #[TrackColumn]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 65535)]
     private string $content;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '工作目录'])]
     #[TrackColumn]
+    #[Assert\Length(max: 255)]
     private ?string $workingDirectory = null;
 
     #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['comment' => '是否使用sudo执行'])]
     #[TrackColumn]
+    #[Assert\Type(type: 'bool')]
     private ?bool $useSudo = false;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true, options: ['comment' => '超时时间(秒)'])]
     #[TrackColumn]
+    #[Assert\PositiveOrZero]
     private ?int $timeout = 60;
 
     /**
@@ -75,32 +98,32 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
      */
     #[ORM\Column(type: Types::JSON, nullable: true, options: ['comment' => '参数定义列表'])]
     #[TrackColumn]
+    #[Assert\Type(type: 'array')]
     private ?array $parameters = [];
 
     #[ORM\Column(type: Types::STRING, length: 50, options: ['comment' => '参数替换模式', 'default' => '{{PARAM_NAME}}'])]
     #[TrackColumn]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     private string $parameterPattern = '{{PARAM_NAME}}';
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['comment' => '失败时是否停止后续步骤', 'default' => true])]
     #[TrackColumn]
+    #[Assert\NotNull]
+    #[Assert\Type(type: 'bool')]
     private bool $stopOnError = true;
 
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '失败重试次数', 'default' => 0])]
     #[TrackColumn]
+    #[Assert\NotNull]
+    #[Assert\PositiveOrZero]
     private int $retryCount = 0;
 
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '重试间隔(秒)', 'default' => 5])]
     #[TrackColumn]
+    #[Assert\NotNull]
+    #[Assert\PositiveOrZero]
     private int $retryInterval = 5;
-
-
-    #[CreateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '创建IP'])]
-    private ?string $createdFromIp = null;
-
-    #[UpdateIpColumn]
-    #[ORM\Column(type: Types::STRING, length: 45, nullable: true, options: ['comment' => '更新IP'])]
-    private ?string $updatedFromIp = null;
 
     /**
      * 转为字符串
@@ -112,12 +135,15 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
 
     /**
      * 转为管理后台数组
+     *
+     * @return array<string, mixed>
      */
     public function retrieveAdminArray(): array
     {
         return [
             'id' => $this->id,
-            'template' => $this->template->getId(),
+            'templateId' => $this->templateId,
+            'template' => $this->templateId,
             'sequence' => $this->sequence,
             'name' => $this->name,
             'description' => $this->description,
@@ -140,6 +166,8 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
 
     /**
      * 转为API数组
+     *
+     * @return array<string, mixed>
      */
     public function retrieveApiArray(): array
     {
@@ -166,15 +194,31 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->id;
     }
 
-    public function getTemplate(): AppTemplate
+    public function getTemplateId(): int
+    {
+        return $this->templateId;
+    }
+
+    public function setTemplateId(int $templateId): void
+    {
+        $this->templateId = $templateId;
+    }
+
+    public function getTemplate(): ?AppTemplate
     {
         return $this->template;
     }
 
-    public function setTemplate(?AppTemplate $template): self
+    public function setTemplate(?AppTemplate $template): void
     {
         $this->template = $template;
-        return $this;
+        // 同步更新外键ID
+        if (null !== $template) {
+            $templateId = $template->getId();
+            if (null !== $templateId) {
+                $this->templateId = $templateId;
+            }
+        }
     }
 
     public function getSequence(): int
@@ -182,10 +226,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->sequence;
     }
 
-    public function setSequence(int $sequence): self
+    public function setSequence(int $sequence): void
     {
         $this->sequence = $sequence;
-        return $this;
     }
 
     public function getName(): string
@@ -193,10 +236,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->name;
     }
 
-    public function setName(string $name): self
+    public function setName(string $name): void
     {
         $this->name = $name;
-        return $this;
     }
 
     public function getDescription(): ?string
@@ -204,10 +246,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->description;
     }
 
-    public function setDescription(?string $description): self
+    public function setDescription(?string $description): void
     {
         $this->description = $description;
-        return $this;
     }
 
     public function getType(): ExecutionStepType
@@ -215,10 +256,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->type;
     }
 
-    public function setType(ExecutionStepType $type): self
+    public function setType(ExecutionStepType $type): void
     {
         $this->type = $type;
-        return $this;
     }
 
     public function getContent(): string
@@ -226,10 +266,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->content;
     }
 
-    public function setContent(string $content): self
+    public function setContent(string $content): void
     {
         $this->content = $content;
-        return $this;
     }
 
     public function getWorkingDirectory(): ?string
@@ -237,10 +276,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->workingDirectory;
     }
 
-    public function setWorkingDirectory(?string $workingDirectory): self
+    public function setWorkingDirectory(?string $workingDirectory): void
     {
         $this->workingDirectory = $workingDirectory;
-        return $this;
     }
 
     public function getUseSudo(): ?bool
@@ -248,10 +286,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->useSudo;
     }
 
-    public function setUseSudo(?bool $useSudo): self
+    public function setUseSudo(?bool $useSudo): void
     {
         $this->useSudo = $useSudo;
-        return $this;
     }
 
     public function getTimeout(): ?int
@@ -259,10 +296,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->timeout;
     }
 
-    public function setTimeout(?int $timeout): self
+    public function setTimeout(?int $timeout): void
     {
         $this->timeout = $timeout;
-        return $this;
     }
 
     /**
@@ -273,10 +309,12 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->parameters;
     }
 
-    public function setParameters(?array $parameters): self
+    /**
+     * @param array<string, mixed>|null $parameters
+     */
+    public function setParameters(?array $parameters): void
     {
         $this->parameters = $parameters;
-        return $this;
     }
 
     public function getParameterPattern(): string
@@ -284,10 +322,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->parameterPattern;
     }
 
-    public function setParameterPattern(string $parameterPattern): self
+    public function setParameterPattern(string $parameterPattern): void
     {
         $this->parameterPattern = $parameterPattern;
-        return $this;
     }
 
     public function isStopOnError(): bool
@@ -295,10 +332,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->stopOnError;
     }
 
-    public function setStopOnError(bool $stopOnError): self
+    public function setStopOnError(bool $stopOnError): void
     {
         $this->stopOnError = $stopOnError;
-        return $this;
     }
 
     public function getRetryCount(): int
@@ -306,10 +342,9 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->retryCount;
     }
 
-    public function setRetryCount(int $retryCount): self
+    public function setRetryCount(int $retryCount): void
     {
         $this->retryCount = $retryCount;
-        return $this;
     }
 
     public function getRetryInterval(): int
@@ -317,32 +352,8 @@ class AppExecutionStep implements \Stringable, AdminArrayInterface, ApiArrayInte
         return $this->retryInterval;
     }
 
-    public function setRetryInterval(int $retryInterval): self
+    public function setRetryInterval(int $retryInterval): void
     {
         $this->retryInterval = $retryInterval;
-        return $this;
-    }
-
-
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setCreatedFromIp(?string $createdFromIp): self
-    {
-        $this->createdFromIp = $createdFromIp;
-        return $this;
-    }
-
-    public function getUpdatedFromIp(): ?string
-    {
-        return $this->updatedFromIp;
-    }
-
-    public function setUpdatedFromIp(?string $updatedFromIp): self
-    {
-        $this->updatedFromIp = $updatedFromIp;
-        return $this;
     }
 }

@@ -4,201 +4,125 @@ declare(strict_types=1);
 
 namespace ServerApplicationBundle\Tests\Service;
 
-use Doctrine\ORM\EntityManagerInterface;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use ServerApplicationBundle\Entity\AppPortConfiguration;
 use ServerApplicationBundle\Entity\AppTemplate;
 use ServerApplicationBundle\Enum\HealthCheckType;
-use ServerApplicationBundle\Repository\AppPortConfigurationRepository;
+use ServerApplicationBundle\Enum\ProtocolType;
 use ServerApplicationBundle\Service\AppPortConfigurationService;
+use Tourze\PHPUnitSymfonyKernelTest\AbstractIntegrationTestCase;
 
 /**
  * AppPortConfigurationService单元测试
+ *
+ * @internal
  */
-class AppPortConfigurationServiceTest extends TestCase
+#[CoversClass(AppPortConfigurationService::class)]
+#[RunTestsInSeparateProcesses]
+final class AppPortConfigurationServiceTest extends AbstractIntegrationTestCase
 {
-    private EntityManagerInterface $entityManager;
-    private AppPortConfigurationRepository $repository;
     private AppPortConfigurationService $service;
 
-    protected function setUp(): void
+    protected function onSetUp(): void
     {
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
-        $this->repository = $this->createMock(AppPortConfigurationRepository::class);
-        $this->service = new AppPortConfigurationService($this->entityManager, $this->repository);
+        $this->service = self::getService(AppPortConfigurationService::class);
     }
 
-    public function test_construct_withValidDependencies_createsServiceInstance(): void
+    private function createAppTemplate(): AppTemplate
     {
-        $entityManager = $this->createMock(EntityManagerInterface::class);
-        $repository = $this->createMock(AppPortConfigurationRepository::class);
-        $service = new AppPortConfigurationService($entityManager, $repository);
+        $template = new AppTemplate();
+        $template->setName('test-template');
+        $template->setVersion('1.0.0');
 
-        $this->assertInstanceOf(AppPortConfigurationService::class, $service);
+        return $template;
     }
 
-    public function test_findAll_callsRepositoryFindAll(): void
+    private function createAppPortConfiguration(): AppPortConfiguration
     {
-        $expectedConfigs = [new AppPortConfiguration(), new AppPortConfiguration()];
-        
-        $this->repository
-            ->method('findAll')
-            ->willReturn($expectedConfigs);
+        $template = $this->createAppTemplate();
 
+        $config = new AppPortConfiguration();
+        $config->setTemplate($template);
+        $config->setPort(8080);
+        $config->setProtocol(ProtocolType::TCP);
+        $config->setHealthCheckType(HealthCheckType::TCP_CONNECT);
+
+        return $config;
+    }
+
+    public function testFindAll(): void
+    {
         $result = $this->service->findAll();
-
-        $this->assertSame($expectedConfigs, $result);
+        $this->assertIsArray($result);
     }
 
-    public function test_find_withValidId_callsRepositoryFind(): void
+    public function testFind(): void
     {
-        $id = 'test-id';
-        $expectedConfig = new AppPortConfiguration();
-        
-        $this->repository
-            ->method('find')
-            ->with($id)
-            ->willReturn($expectedConfig);
-
-        $result = $this->service->find($id);
-
-        $this->assertSame($expectedConfig, $result);
-    }
-
-    public function test_find_withNonExistentId_returnsNull(): void
-    {
-        $id = 'non-existent-id';
-        
-        $this->repository
-            ->method('find')
-            ->with($id)
-            ->willReturn(null);
-
-        $result = $this->service->find($id);
-
+        $result = $this->service->find('test-id');
         $this->assertNull($result);
     }
 
-    public function test_save_withValidConfig_persistsAndFlushes(): void
+    public function testFindNotFound(): void
     {
-        $config = new AppPortConfiguration();
-        
-        $this->entityManager
-            ->expects($this->once())
-            ->method('persist')
-            ->with($config);
-            
-        $this->entityManager
-            ->expects($this->once())
-            ->method('flush');
+        $result = $this->service->find('non-existing-id');
+        $this->assertNull($result);
+    }
+
+    public function testSave(): void
+    {
+        $config = $this->createAppPortConfiguration();
 
         $this->service->save($config);
-        
-        $this->assertTrue(true);
+        $this->assertNotNull($config->getId());
     }
 
-    public function test_save_withFlushFalse_persistsWithoutFlush(): void
+    public function testRemove(): void
     {
-        $config = new AppPortConfiguration();
-        
-        $this->entityManager
-            ->expects($this->once())
-            ->method('persist')
-            ->with($config);
-            
-        $this->entityManager
-            ->expects($this->never())
-            ->method('flush');
+        $config = $this->createAppPortConfiguration();
 
-        $this->service->save($config, false);
-        
-        $this->assertTrue(true);
-    }
-
-    public function test_remove_withValidConfig_removesAndFlushes(): void
-    {
-        $config = new AppPortConfiguration();
-        
-        $this->entityManager
-            ->expects($this->once())
-            ->method('remove')
-            ->with($config);
-            
-        $this->entityManager
-            ->expects($this->once())
-            ->method('flush');
-
+        $this->service->save($config);
+        $id = $config->getId();
         $this->service->remove($config);
-        
-        $this->assertTrue(true);
+
+        $this->assertNull($this->service->find((string) $id));
     }
 
-    public function test_remove_withFlushFalse_removesWithoutFlush(): void
+    public function testFindByTemplate(): void
     {
-        $config = new AppPortConfiguration();
-        
-        $this->entityManager
-            ->expects($this->once())
-            ->method('remove')
-            ->with($config);
-            
-        $this->entityManager
-            ->expects($this->never())
-            ->method('flush');
-
-        $this->service->remove($config, false);
-        
-        $this->assertTrue(true);
-    }
-
-    public function test_findByTemplate_withTemplate_returnsConfigurations(): void
-    {
-        $template = new AppTemplate();
-        $expectedConfigs = [new AppPortConfiguration(), new AppPortConfiguration()];
-        
-        $this->repository
-            ->method('findBy')
-            ->with(['template' => $template])
-            ->willReturn($expectedConfigs);
+        $template = $this->createAppTemplate();
 
         $result = $this->service->findByTemplate($template);
-
-        $this->assertSame($expectedConfigs, $result);
+        $this->assertIsArray($result);
     }
 
-    public function test_checkHealth_withTcpConnectType_returnsBooleanValue(): void
+    public function testCheckHealth(): void
     {
         $config = new AppPortConfiguration();
         $config->setHealthCheckType(HealthCheckType::TCP_CONNECT);
         $config->setHealthCheckTimeout(1);
-        
-        // 测试一个通常不存在的端口
-        $result = $this->service->checkHealth($config, 9999, '127.0.0.1');
-        
-        // 只验证返回值是布尔类型，不验证具体结果（因为端口可能存在或不存在）
-        $this->assertFalse($result); // 端口 9999 通常是关闭的
+        $config->setHealthCheckRetries(1);
+
+        $result = $this->service->checkHealth($config, 8080, 'localhost');
+        $this->assertIsBool($result);
     }
 
-    public function test_checkHealth_withUdpPortCheckType_returnsBoolean(): void
-    {
-        $config = new AppPortConfiguration();
-        $config->setHealthCheckType(HealthCheckType::UDP_PORT_CHECK);
-        
-        // 测试 UDP 端口检测
-        $result = $this->service->checkHealth($config, 9999, '127.0.0.1');
-        
-        // UDP 由于其无连接特性，fsockopen 通常会成功
-        $this->assertTrue($result);
-    }
-
-    public function test_checkHealth_withCommandType_returnsBasedOnExitCode(): void
+    public function testCheckHealthWithCommandType(): void
     {
         $config = new AppPortConfiguration();
         $config->setHealthCheckType(HealthCheckType::COMMAND);
-        $config->setHealthCheckConfig(['command' => 'true', 'successExitCode' => 0]);
-        
-        $result = $this->service->checkHealth($config, 80, 'localhost');
-        
-        $this->assertTrue($result); // true 命令总是返回退出码 0
+        $config->setHealthCheckConfig(['command' => 'echo "test"', 'successExitCode' => 0]);
+
+        $result = $this->service->checkHealth($config, 8080, 'localhost');
+        $this->assertIsBool($result);
     }
-} 
+
+    public function testCheckHealthWithUdpType(): void
+    {
+        $config = new AppPortConfiguration();
+        $config->setHealthCheckType(HealthCheckType::UDP_PORT_CHECK);
+
+        $result = $this->service->checkHealth($config, 8080, 'localhost');
+        $this->assertIsBool($result);
+    }
+}

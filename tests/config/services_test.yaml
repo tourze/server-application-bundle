@@ -4,9 +4,6 @@ services:
     autowire: true      # Automatically injects dependencies in your services.
     autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
 
-  ServerApplicationBundle\Controller\:
-    resource: '../../Controller/'
-  ServerApplicationBundle\Repository\:
-    resource: '../../Repository/'
+  # 只加载 Service，不加载 Controller 和 Repository 避免依赖问题
   ServerApplicationBundle\Service\:
-    resource: '../../Service/'
+    resource: '../../src/Service/'

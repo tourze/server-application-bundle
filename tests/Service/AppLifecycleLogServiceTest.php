@@ -4,56 +4,189 @@ declare(strict_types=1);
 
 namespace ServerApplicationBundle\Tests\Service;
 
-use Doctrine\ORM\EntityManagerInterface;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use ServerApplicationBundle\Entity\AppInstance;
 use ServerApplicationBundle\Entity\AppLifecycleLog;
-use ServerApplicationBundle\Repository\AppLifecycleLogRepository;
+use ServerApplicationBundle\Entity\AppTemplate;
+use ServerApplicationBundle\Enum\AppStatus;
+use ServerApplicationBundle\Enum\LifecycleActionType;
+use ServerApplicationBundle\Enum\LogStatus;
 use ServerApplicationBundle\Service\AppLifecycleLogService;
+use Tourze\PHPUnitSymfonyKernelTest\AbstractIntegrationTestCase;
 
 /**
- * AppLifecycleLogService 测试类
+ * AppLifecycleLogService单元测试
+ *
+ * @internal
  */
-class AppLifecycleLogServiceTest extends TestCase
+#[CoversClass(AppLifecycleLogService::class)]
+#[RunTestsInSeparateProcesses]
+final class AppLifecycleLogServiceTest extends AbstractIntegrationTestCase
 {
     private AppLifecycleLogService $service;
-    private AppLifecycleLogRepository $repository;
-    private EntityManagerInterface $entityManager;
 
-    public function testServiceIsCallable(): void
+    protected function onSetUp(): void
     {
-        $this->assertInstanceOf(AppLifecycleLogService::class, $this->service);
+        $this->service = self::getService(AppLifecycleLogService::class);
     }
 
-    public function testFindAllReturnsArray(): void
+    private function createAppInstance(): AppInstance
+    {
+        $template = new AppTemplate();
+        $template->setName('test-template');
+        $template->setVersion('1.0.0');
+
+        $instance = new AppInstance();
+        $instance->setName('test-instance');
+        $instance->setTemplate($template);
+        $instance->setTemplateVersion('1.0.0');
+        $instance->setNodeId('test-node');
+        $instance->setStatus(AppStatus::RUNNING);
+
+        return $instance;
+    }
+
+    public function testFindAll(): void
     {
         $result = $this->service->findAll();
-        $this->assertNotNull($result);
+        $this->assertIsArray($result);
     }
 
-    public function testFindByInstanceReturnsArray(): void
+    public function testFind(): void
     {
-        $instance = $this->createMock(AppInstance::class);
+        $result = $this->service->find('test-id');
+        $this->assertNull($result);
+    }
+
+    public function testFindNotFound(): void
+    {
+        $result = $this->service->find('non-existing-id');
+        $this->assertNull($result);
+    }
+
+    public function testSave(): void
+    {
+        $instance = $this->createAppInstance();
+
+        $log = new AppLifecycleLog();
+        $log->setInstance($instance);
+        $log->setAction(LifecycleActionType::INSTALL);
+        $log->setStatus(LogStatus::SUCCESS);
+        $log->setMessage('Test message');
+
+        $this->service->save($log);
+        $this->assertNotNull($log->getId());
+    }
+
+    public function testRemove(): void
+    {
+        $instance = $this->createAppInstance();
+
+        $log = new AppLifecycleLog();
+        $log->setInstance($instance);
+        $log->setAction(LifecycleActionType::INSTALL);
+        $log->setStatus(LogStatus::SUCCESS);
+        $log->setMessage('Test message');
+
+        $this->service->save($log);
+        $id = $log->getId();
+        $this->service->remove($log);
+
+        $this->assertNull($this->service->find((string) $id));
+    }
+
+    public function testFindByInstance(): void
+    {
+        $instance = $this->createAppInstance();
+
         $result = $this->service->findByInstance($instance);
-        $this->assertNotNull($result);
+        $this->assertIsArray($result);
     }
 
-    public function testSaveMethodExists(): void
+    public function testFindByInstanceAndAction(): void
     {
-        $log = $this->createMock(AppLifecycleLog::class);
-        $this->expectNotToPerformAssertions();
+        $instance = $this->createAppInstance();
 
-        try {
-            $this->service->save($log);
-        } catch (\Throwable $e) {
-            // 忽略实际的数据库操作错误，只要方法存在就行
-        }
+        $result = $this->service->findByInstanceAndAction($instance, LifecycleActionType::INSTALL);
+        $this->assertIsArray($result);
     }
 
-    protected function setUp(): void
+    public function testCreateLog(): void
     {
-        $this->repository = $this->createMock(AppLifecycleLogRepository::class);
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
-        $this->service = new AppLifecycleLogService($this->entityManager, $this->repository);
+        $instance = $this->createAppInstance();
+
+        $log = $this->service->createLog(
+            $instance,
+            LifecycleActionType::INSTALL,
+            LogStatus::SUCCESS,
+            'Test message',
+            'Test output',
+            0,
+            1.5
+        );
+
+        $this->assertSame($instance, $log->getInstance());
+        $this->assertSame(LifecycleActionType::INSTALL, $log->getAction());
+        $this->assertSame(LogStatus::SUCCESS, $log->getStatus());
+        $this->assertSame('Test message', $log->getMessage());
+        $this->assertSame('Test output', $log->getCommandOutput());
+        $this->assertSame(0, $log->getExitCode());
+        $this->assertSame(1.5, $log->getExecutionTime());
+    }
+
+    public function testLogInstallStart(): void
+    {
+        $instance = $this->createAppInstance();
+
+        $log = $this->service->logInstallStart($instance);
+        $this->assertSame($instance, $log->getInstance());
+        $this->assertSame(LifecycleActionType::INSTALL, $log->getAction());
+        $this->assertSame(LogStatus::SUCCESS, $log->getStatus());
+        $this->assertSame('开始安装应用', $log->getMessage());
+    }
+
+    public function testLogInstallComplete(): void
+    {
+        $instance = $this->createAppInstance();
+
+        $log = $this->service->logInstallComplete($instance, true);
+        $this->assertSame($instance, $log->getInstance());
+        $this->assertSame(LifecycleActionType::INSTALL, $log->getAction());
+        $this->assertSame(LogStatus::SUCCESS, $log->getStatus());
+        $this->assertSame('安装完成', $log->getMessage());
+    }
+
+    public function testLogHealthCheck(): void
+    {
+        $instance = $this->createAppInstance();
+
+        $log = $this->service->logHealthCheck($instance, true);
+        $this->assertSame($instance, $log->getInstance());
+        $this->assertSame(LifecycleActionType::HEALTH_CHECK, $log->getAction());
+        $this->assertSame(LogStatus::SUCCESS, $log->getStatus());
+        $this->assertSame('健康检查通过', $log->getMessage());
+    }
+
+    public function testLogUninstallStart(): void
+    {
+        $instance = $this->createAppInstance();
+
+        $log = $this->service->logUninstallStart($instance);
+        $this->assertSame($instance, $log->getInstance());
+        $this->assertSame(LifecycleActionType::UNINSTALL, $log->getAction());
+        $this->assertSame(LogStatus::SUCCESS, $log->getStatus());
+        $this->assertSame('开始卸载应用', $log->getMessage());
+    }
+
+    public function testLogUninstallComplete(): void
+    {
+        $instance = $this->createAppInstance();
+
+        $log = $this->service->logUninstallComplete($instance, true);
+        $this->assertSame($instance, $log->getInstance());
+        $this->assertSame(LifecycleActionType::UNINSTALL, $log->getAction());
+        $this->assertSame(LogStatus::SUCCESS, $log->getStatus());
+        $this->assertSame('卸载完成', $log->getMessage());
     }
 }
