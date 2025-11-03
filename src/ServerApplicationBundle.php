@@ -10,6 +10,7 @@ use Tourze\DoctrineIpBundle\DoctrineIpBundle;
 use Tourze\DoctrineTimestampBundle\DoctrineTimestampBundle;
 use Tourze\DoctrineTrackBundle\DoctrineTrackBundle;
 use Tourze\DoctrineUserBundle\DoctrineUserBundle;
+use Tourze\EasyAdminMenuBundle\EasyAdminMenuBundle;
 
 class ServerApplicationBundle extends Bundle implements BundleDependencyInterface
 {
@@ -22,6 +23,7 @@ class ServerApplicationBundle extends Bundle implements BundleDependencyInterfac
             DoctrineIpBundle::class => ['all' => true],
             DoctrineTrackBundle::class => ['all' => true],
             DoctrineUserBundle::class => ['all' => true],
+            EasyAdminMenuBundle::class => ['all' => true],
         ];
     }
 }
