@@ -132,21 +132,21 @@ final class AppTemplateCrudController extends AbstractCrudController
     public function configureActions(Actions $actions): Actions
     {
         $setAsLatest = Action::new('setAsLatest', '设为最新版本')
-            ->linkToCrudAction('markAsLatestAction')
+            ->linkToRoute('admin_server_application_app_template_markAsLatestAction', fn (AppTemplate $entity) => ['id' => $entity->getId()])
             ->displayIf(fn (AppTemplate $entity) => !$entity->isLatest())
             ->setCssClass('btn btn-primary')
             ->setIcon('fa fa-check')
         ;
 
         $enable = Action::new('enable', '启用')
-            ->linkToCrudAction('enableAction')
+            ->linkToRoute('admin_server_application_app_template_enableAction', fn (AppTemplate $entity) => ['id' => $entity->getId()])
             ->displayIf(fn (AppTemplate $entity) => !$entity->isEnabled())
             ->setCssClass('btn btn-success')
             ->setIcon('fa fa-play')
         ;
 
         $disable = Action::new('disable', '禁用')
-            ->linkToCrudAction('disableAction')
+            ->linkToRoute('admin_server_application_app_template_disableAction', fn (AppTemplate $entity) => ['id' => $entity->getId()])
             ->displayIf(fn (AppTemplate $entity) => $entity->isEnabled())
             ->setCssClass('btn btn-warning')
             ->setIcon('fa fa-pause')

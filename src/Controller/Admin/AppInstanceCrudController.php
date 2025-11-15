@@ -180,35 +180,35 @@ final class AppInstanceCrudController extends AbstractCrudController
     public function configureActions(Actions $actions): Actions
     {
         $deploy = Action::new('deploy', '部署')
-            ->linkToCrudAction('deployAction')
+            ->linkToRoute('admin_server_application_app_instance_deployAction', fn (AppInstance $entity) => ['id' => $entity->getId()])
             ->displayIf(fn (AppInstance $entity) => in_array($entity->getStatus(), [AppStatus::FAILED, AppStatus::STOPPED], true))
             ->setCssClass('btn btn-primary')
             ->setIcon('fa fa-rocket')
         ;
 
         $start = Action::new('start', '启动')
-            ->linkToCrudAction('startAction')
+            ->linkToRoute('admin_server_application_app_instance_startAction', fn (AppInstance $entity) => ['id' => $entity->getId()])
             ->displayIf(fn (AppInstance $entity) => AppStatus::STOPPED === $entity->getStatus())
             ->setCssClass('btn btn-success')
             ->setIcon('fa fa-play')
         ;
 
         $stop = Action::new('stop', '停止')
-            ->linkToCrudAction('stopAction')
+            ->linkToRoute('admin_server_application_app_instance_stopAction', fn (AppInstance $entity) => ['id' => $entity->getId()])
             ->displayIf(fn (AppInstance $entity) => AppStatus::RUNNING === $entity->getStatus())
             ->setCssClass('btn btn-warning')
             ->setIcon('fa fa-pause')
         ;
 
         $uninstall = Action::new('uninstall', '卸载')
-            ->linkToCrudAction('uninstallAction')
+            ->linkToRoute('admin_server_application_app_instance_uninstallAction', fn (AppInstance $entity) => ['id' => $entity->getId()])
             ->displayIf(fn (AppInstance $entity) => in_array($entity->getStatus(), [AppStatus::RUNNING, AppStatus::STOPPED, AppStatus::FAILED], true))
             ->setCssClass('btn btn-danger')
             ->setIcon('fa fa-trash')
         ;
 
         $checkHealth = Action::new('checkHealth', '健康检查')
-            ->linkToCrudAction('checkHealthAction')
+            ->linkToRoute('admin_server_application_app_instance_checkHealthAction', fn (AppInstance $entity) => ['id' => $entity->getId()])
             ->displayIf(fn (AppInstance $entity) => in_array($entity->getStatus(), [AppStatus::RUNNING], true))
             ->setCssClass('btn btn-info')
             ->setIcon('fa fa-heartbeat')

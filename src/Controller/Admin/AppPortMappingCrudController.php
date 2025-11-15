@@ -122,7 +122,7 @@ final class AppPortMappingCrudController extends AbstractCrudController
     public function configureActions(Actions $actions): Actions
     {
         $checkHealth = Action::new('checkHealth', '健康检查')
-            ->linkToCrudAction('checkHealthAction')
+            ->linkToRoute('admin_server_application_app_port_mapping_checkHealthAction', fn (AppPortMapping $entity) => ['id' => $entity->getId()])
             ->setCssClass('btn btn-info')
             ->setIcon('fa fa-heartbeat')
         ;

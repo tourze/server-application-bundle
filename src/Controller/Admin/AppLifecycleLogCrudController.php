@@ -21,6 +21,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\CodeEditorField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
@@ -120,15 +121,9 @@ final class AppLifecycleLogCrudController extends AbstractCrudController
             ->hideOnIndex()
         ;
 
-        yield IntegerField::new('executionTime', '执行时间')
+        yield NumberField::new('executionTime', '执行时间(秒)')
             ->hideOnIndex()
-            ->formatValue(function ($value) {
-                if (null === $value || !is_numeric($value)) {
-                    return '';
-                }
-
-                return number_format((float) $value, 3) . ' 秒';
-            })
+            ->setNumDecimals(3)
         ;
 
         yield DateTimeField::new('createTime', '创建时间')
