@@ -120,7 +120,7 @@ final class AppLifecycleLogCrudController extends AbstractCrudController
             ->hideOnIndex()
         ;
 
-        yield TextField::new('executionTime', '执行时间')
+        yield IntegerField::new('executionTime', '执行时间')
             ->hideOnIndex()
             ->formatValue(function ($value) {
                 if (null === $value || !is_numeric($value)) {

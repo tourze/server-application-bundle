@@ -61,9 +61,7 @@ final class AppInstanceCrudControllerTest extends AbstractEasyAdminControllerTes
 
     public function testIndexPageWithAuthentication(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->createAdminUser('admin@test.com', 'password123');
-        $this->loginAsAdmin($client, 'admin@test.com', 'password123');
+        $client = $this->createAuthenticatedClient();
 
         $client->request('GET', '/admin');
 
@@ -93,9 +91,7 @@ final class AppInstanceCrudControllerTest extends AbstractEasyAdminControllerTes
 
     public function testSearchFilters(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->createAdminUser('admin@test.com', 'password123');
-        $this->loginAsAdmin($client, 'admin@test.com', 'password123');
+        $client = $this->createAuthenticatedClient();
 
         // 测试 4 个过滤器：TextFilter:name, EntityFilter:template, TextFilter:nodeId, ChoiceFilter:status
         $filterTests = [
@@ -124,9 +120,7 @@ final class AppInstanceCrudControllerTest extends AbstractEasyAdminControllerTes
 
     public function testDeployAction(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->createAdminUser('admin@test.com', 'password123');
-        $this->loginAsAdmin($client, 'admin@test.com', 'password123');
+        $client = $this->createAuthenticatedClient();
 
         try {
             $client->request('POST', '/admin/test-instance/1/deploy');
@@ -146,9 +140,7 @@ final class AppInstanceCrudControllerTest extends AbstractEasyAdminControllerTes
 
     public function testStartAction(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->createAdminUser('admin@test.com', 'password123');
-        $this->loginAsAdmin($client, 'admin@test.com', 'password123');
+        $client = $this->createAuthenticatedClient();
 
         try {
             $client->request('POST', '/admin/test-instance/1/start');
@@ -168,9 +160,7 @@ final class AppInstanceCrudControllerTest extends AbstractEasyAdminControllerTes
 
     public function testStopAction(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->createAdminUser('admin@test.com', 'password123');
-        $this->loginAsAdmin($client, 'admin@test.com', 'password123');
+        $client = $this->createAuthenticatedClient();
 
         try {
             $client->request('POST', '/admin/test-instance/1/stop');
@@ -190,9 +180,7 @@ final class AppInstanceCrudControllerTest extends AbstractEasyAdminControllerTes
 
     public function testUninstallAction(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->createAdminUser('admin@test.com', 'password123');
-        $this->loginAsAdmin($client, 'admin@test.com', 'password123');
+        $client = $this->createAuthenticatedClient();
 
         try {
             $client->request('POST', '/admin/test-instance/1/uninstall');
@@ -212,9 +200,7 @@ final class AppInstanceCrudControllerTest extends AbstractEasyAdminControllerTes
 
     public function testCheckHealthAction(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->createAdminUser('admin@test.com', 'password123');
-        $this->loginAsAdmin($client, 'admin@test.com', 'password123');
+        $client = $this->createAuthenticatedClient();
 
         try {
             $client->request('POST', '/admin/test-instance/1/check-health');

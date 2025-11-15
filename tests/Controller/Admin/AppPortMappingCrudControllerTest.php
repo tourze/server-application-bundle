@@ -68,9 +68,7 @@ final class AppPortMappingCrudControllerTest extends AbstractEasyAdminController
 
     public function testIndexPageWithAuthentication(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->createAdminUser('admin@test.com', 'password123');
-        $this->loginAsAdmin($client, 'admin@test.com', 'password123');
+        $client = $this->createAuthenticatedClient();
 
         $client->request('GET', '/admin');
 
@@ -100,9 +98,7 @@ final class AppPortMappingCrudControllerTest extends AbstractEasyAdminController
 
     public function testSearchFilters(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->createAdminUser('admin@test.com', 'password123');
-        $this->loginAsAdmin($client, 'admin@test.com', 'password123');
+        $client = $this->createAuthenticatedClient();
 
         // 测试 4 个过滤器：EntityFilter:instance, EntityFilter:configuration, NumericFilter:actualPort, BooleanFilter:healthy
         $filterTests = [
