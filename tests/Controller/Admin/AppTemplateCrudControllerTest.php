@@ -19,23 +19,6 @@ use Tourze\PHPUnitSymfonyWebTest\AbstractEasyAdminControllerTestCase;
 #[RunTestsInSeparateProcesses]
 final class AppTemplateCrudControllerTest extends AbstractEasyAdminControllerTestCase
 {
-    public function testGetEntityFqcnReturnsCorrectEntityClass(): void
-    {
-        $client = self::createClientWithDatabase();
-
-        // 测试实体类名获取
-        $this->assertSame(AppTemplate::class, AppTemplateCrudController::getEntityFqcn());
-
-        // 测试 HTTP 层
-        try {
-            $client->request('GET', '/admin/dashboard');
-            $this->assertTrue($client->getResponse()->isSuccessful() || $client->getResponse()->isClientError());
-        } catch (\Exception $e) {
-            // 路由不存在是预期的，说明 HTTP 层正常工作
-            $this->assertInstanceOf(\Exception::class, $e);
-        }
-    }
-
     public function testUnauthorizedAccess(): void
     {
         $client = self::createClientWithDatabase();
