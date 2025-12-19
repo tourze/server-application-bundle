@@ -5,7 +5,7 @@ namespace ServerApplicationBundle\DependencyInjection;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Tourze\SymfonyDependencyServiceLoader\AutoExtension;
 
-class ServerApplicationExtension extends AutoExtension
+final class ServerApplicationExtension extends AutoExtension
 {
     protected function getConfigDir(): string
     {

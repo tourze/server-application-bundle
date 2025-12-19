@@ -37,16 +37,10 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '唯一标识符'])]
     private ?int $id = null;
 
-    #[ORM\Column(name: 'template_id', type: Types::INTEGER, options: ['comment' => '应用模板ID'])]
-    #[IndexColumn]
-    #[Assert\NotNull]
-    #[Assert\PositiveOrZero]
-    private int $templateId;
-
     /**
      * 所属应用模板
      */
-    #[ORM\ManyToOne(targetEntity: AppTemplate::class, inversedBy: 'portConfigurations', cascade: ['persist'])]
+    #[ORM\ManyToOne(targetEntity: AppTemplate::class, cascade: ['persist'], inversedBy: 'portConfigurations')]
     #[ORM\JoinColumn(name: 'template_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     private ?AppTemplate $template = null;
 
@@ -115,7 +109,7 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
     {
         return [
             'id' => $this->id,
-            'template' => $this->templateId,
+            'template' => $this->template?->getId(),
             'port' => $this->port,
             'protocol' => $this->protocol->value,
             'description' => $this->description,
@@ -178,16 +172,6 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
         return $this->id;
     }
 
-    public function getTemplateId(): int
-    {
-        return $this->templateId;
-    }
-
-    public function setTemplateId(int $templateId): void
-    {
-        $this->templateId = $templateId;
-    }
-
     public function getTemplate(): ?AppTemplate
     {
         return $this->template;
@@ -196,13 +180,6 @@ class AppPortConfiguration implements \Stringable, AdminArrayInterface, ApiArray
     public function setTemplate(?AppTemplate $template): void
     {
         $this->template = $template;
-        // 同步更新外键ID
-        if (null !== $template) {
-            $templateId = $template->getId();
-            if (null !== $templateId) {
-                $this->templateId = $templateId;
-            }
-        }
     }
 
     public function getPort(): int

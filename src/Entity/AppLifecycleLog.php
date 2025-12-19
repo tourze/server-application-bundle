@@ -36,22 +36,12 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '唯一标识符'])]
     private ?int $id = null;
 
-    #[ORM\Column(name: 'instance_id', type: Types::INTEGER, nullable: true, options: ['comment' => '应用实例ID'])]
-    #[IndexColumn]
-    #[Assert\PositiveOrZero]
-    private ?int $instanceId = null;
-
     /**
      * 所属应用实例
      */
     #[ORM\ManyToOne(targetEntity: AppInstance::class, inversedBy: 'lifecycleLogs', cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'instance_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
     private ?AppInstance $instance = null;
-
-    #[ORM\Column(name: 'execution_step_id', type: Types::INTEGER, nullable: true, options: ['comment' => '执行步骤ID'])]
-    #[IndexColumn]
-    #[Assert\PositiveOrZero]
-    private ?int $executionStepId = null;
 
     /**
      * 关联的执行步骤
@@ -163,16 +153,6 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
         return $this->id;
     }
 
-    public function getInstanceId(): ?int
-    {
-        return $this->instanceId;
-    }
-
-    public function setInstanceId(?int $instanceId): void
-    {
-        $this->instanceId = $instanceId;
-    }
-
     public function getInstance(): ?AppInstance
     {
         return $this->instance;
@@ -181,25 +161,6 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
     public function setInstance(?AppInstance $instance): void
     {
         $this->instance = $instance;
-        // 同步更新外键ID
-        if (null !== $instance) {
-            $instanceId = $instance->getId();
-            if (null !== $instanceId) {
-                $this->instanceId = $instanceId;
-            }
-        } else {
-            $this->instanceId = null;
-        }
-    }
-
-    public function getExecutionStepId(): ?int
-    {
-        return $this->executionStepId;
-    }
-
-    public function setExecutionStepId(?int $executionStepId): void
-    {
-        $this->executionStepId = $executionStepId;
     }
 
     public function getExecutionStep(): ?AppExecutionStep
@@ -210,15 +171,6 @@ class AppLifecycleLog implements \Stringable, AdminArrayInterface, ApiArrayInter
     public function setExecutionStep(?AppExecutionStep $executionStep): void
     {
         $this->executionStep = $executionStep;
-        // 同步更新外键ID
-        if (null !== $executionStep) {
-            $stepId = $executionStep->getId();
-            if (null !== $stepId) {
-                $this->executionStepId = $stepId;
-            }
-        } else {
-            $this->executionStepId = null;
-        }
     }
 
     public function getAction(): LifecycleActionType

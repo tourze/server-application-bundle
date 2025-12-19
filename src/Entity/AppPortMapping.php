@@ -35,23 +35,12 @@ class AppPortMapping implements \Stringable, AdminArrayInterface, ApiArrayInterf
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '唯一标识符'])]
     private ?int $id = null;
 
-    #[ORM\Column(name: 'instance_id', type: Types::INTEGER, nullable: true, options: ['comment' => '应用实例ID'])]
-    #[IndexColumn]
-    #[Assert\PositiveOrZero]
-    private ?int $instanceId = null;
-
     /**
      * 所属应用实例
      */
     #[ORM\ManyToOne(targetEntity: AppInstance::class, inversedBy: 'portMappings', cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'instance_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
     private ?AppInstance $instance = null;
-
-    #[ORM\Column(name: 'configuration_id', type: Types::INTEGER, options: ['comment' => '端口配置ID'])]
-    #[IndexColumn]
-    #[Assert\NotNull]
-    #[Assert\PositiveOrZero]
-    private int $portConfigId;
 
     /**
      * 关联的端口配置
@@ -149,26 +138,6 @@ class AppPortMapping implements \Stringable, AdminArrayInterface, ApiArrayInterf
         return $this->id;
     }
 
-    public function getInstanceId(): ?int
-    {
-        return $this->instanceId;
-    }
-
-    public function setInstanceId(?int $instanceId): void
-    {
-        $this->instanceId = $instanceId;
-    }
-
-    public function getConfigurationId(): int
-    {
-        return $this->portConfigId;
-    }
-
-    public function setConfigurationId(int $configurationId): void
-    {
-        $this->portConfigId = $configurationId;
-    }
-
     public function getInstance(): ?AppInstance
     {
         return $this->instance;
@@ -177,15 +146,6 @@ class AppPortMapping implements \Stringable, AdminArrayInterface, ApiArrayInterf
     public function setInstance(?AppInstance $instance): void
     {
         $this->instance = $instance;
-        // 同步更新外键ID
-        if (null !== $instance) {
-            $instanceId = $instance->getId();
-            if (null !== $instanceId) {
-                $this->instanceId = $instanceId;
-            }
-        } else {
-            $this->instanceId = null;
-        }
     }
 
     public function getConfiguration(): AppPortConfiguration
@@ -196,11 +156,6 @@ class AppPortMapping implements \Stringable, AdminArrayInterface, ApiArrayInterf
     public function setConfiguration(AppPortConfiguration $configuration): void
     {
         $this->configuration = $configuration;
-        // 同步更新外键ID
-        $configurationId = $configuration->getId();
-        if (null !== $configurationId) {
-            $this->portConfigId = $configurationId;
-        }
     }
 
     public function getActualPort(): int

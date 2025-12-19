@@ -196,7 +196,7 @@ final class AppPortConfigurationTest extends AbstractEntityTestCase
         // 原因：测试需要验证实体间的关联设置，实体类没有对应的接口抽象
         // 替代方案：创建真实对象会增加测试复杂度和依赖，Mock 是最佳选择
         $template = $this->createMock(AppTemplate::class);
-        $template->expects($this->exactly(1))
+        $template->expects($this->exactly(2))
             ->method('getId')
             ->willReturn(1)
         ;
